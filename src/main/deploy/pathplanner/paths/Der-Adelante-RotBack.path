@@ -1,0 +1,54 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 4.1,
+        "y": 0.626
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 4.349975134556835,
+        "y": 0.6224740812130692
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 4.1,
+        "y": 0.626
+      },
+      "prevControl": {
+        "x": 3.8192528756762325,
+        "y": 0.6298594281663659
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 180.0
+  },
+  "reversed": false,
+  "folder": "Hub2Trench",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": 81.14533019187026
+  },
+  "useDefaultConstraints": true
+}

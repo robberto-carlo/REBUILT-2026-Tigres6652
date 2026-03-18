@@ -1,0 +1,139 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Der-90G-Atras"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Hood-preShoot"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.5
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAim_Hub"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot-On"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-On"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 4.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot-Off"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-Off"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Hub2Opost-trenchDer-1"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Down-Intake"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Hub2Opost-trenchDer-2"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 5.0
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Opost2HUB-Cen-Atras-2"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot-On"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-On"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 2.3
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Up-Intake"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 5.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot-Off"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-Off"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

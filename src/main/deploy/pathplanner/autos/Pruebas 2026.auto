@@ -1,0 +1,151 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Der-0G-Medio"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.7
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAim_Hub"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot-On"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-On"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 3.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-Off"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot-Off"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Down-Intake"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Hood-Save"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Der-Adelante-RotFront"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-On"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "0Grad-Fuels"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.5
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-Off"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Fuels-180Grad"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Up-Intake"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 1.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAim_Hub"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot-On"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.8
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-On"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

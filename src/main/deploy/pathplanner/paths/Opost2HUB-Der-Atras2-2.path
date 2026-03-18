@@ -1,0 +1,102 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 0.54,
+        "y": 0.626
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 0.7664596858167746,
+        "y": 0.731905668874559
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 1.341831325301205,
+        "y": 1.029879518072289
+      },
+      "prevControl": {
+        "x": 0.9134633316857959,
+        "y": 0.7966323042130935
+      },
+      "nextControl": {
+        "x": 1.5849666737737491,
+        "y": 1.1622671928452568
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 1.8117228915662649,
+        "y": 1.029879518072289
+      },
+      "prevControl": {
+        "x": 1.98267662375164,
+        "y": 0.7759935529962365
+      },
+      "nextControl": {
+        "x": 1.5535294410741687,
+        "y": 1.4133265040873142
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 1.5057469879518073,
+        "y": 1.7401807228915662
+      },
+      "prevControl": {
+        "x": 1.331212839513102,
+        "y": 2.0995951294808264
+      },
+      "nextControl": {
+        "x": 1.623581060849013,
+        "y": 1.497527558652946
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 1.69,
+        "y": 1.4
+      },
+      "prevControl": {
+        "x": 1.4499579648883054,
+        "y": 1.3301442816983746
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 32.80941610422736
+  },
+  "reversed": false,
+  "folder": "Opost-PreCar-Beta",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": -90.0
+  },
+  "useDefaultConstraints": true
+}

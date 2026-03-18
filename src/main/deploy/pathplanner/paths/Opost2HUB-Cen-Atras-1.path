@@ -1,0 +1,109 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 0.5,
+        "y": 0.626
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 1.1016788653593261,
+        "y": 1.3963817511343986
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 2.185,
+        "y": 3.751
+      },
+      "prevControl": {
+        "x": 2.2147190079993506,
+        "y": 3.1727632141038287
+      },
+      "nextControl": {
+        "x": 2.1721679585495033,
+        "y": 4.0006704602315075
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 2.185,
+        "y": 3.45
+      },
+      "prevControl": {
+        "x": 2.1805095267563686,
+        "y": 3.732666826061256
+      },
+      "nextControl": {
+        "x": 2.188971023755433,
+        "y": 3.200031540048882
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 2.185,
+        "y": 3.631
+      },
+      "prevControl": {
+        "x": 2.195114487483268,
+        "y": 3.3544604286482698
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 1.292116182572605,
+      "rotationDegrees": 38.0
+    },
+    {
+      "waypointRelativePos": 2.482157676348507,
+      "rotationDegrees": -22.0
+    }
+  ],
+  "constraintZones": [
+    {
+      "name": "Constraints Zone",
+      "minWaypointRelativePos": 0.8605459057072038,
+      "maxWaypointRelativePos": 3.0,
+      "constraints": {
+        "maxVelocity": 1.8,
+        "maxAcceleration": 3.0,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 720.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 8.507
+  },
+  "reversed": false,
+  "folder": "1_Opost-PreCar",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": -90.0
+  },
+  "useDefaultConstraints": true
+}

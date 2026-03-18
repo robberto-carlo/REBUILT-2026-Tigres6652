@@ -1,0 +1,73 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "90-Opost-trenchDer"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Down-Intake"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 3.5
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Opost2HUB-Cen-Atras"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAim_Hub"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot-On"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-On"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 4.5
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-Off"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot-Off"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

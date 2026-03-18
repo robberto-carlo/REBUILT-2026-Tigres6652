@@ -1,0 +1,97 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Izq-90G-Atras"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.8
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAim_Hub"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot-On"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-On"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 4.5
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-Off"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot-Off"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.6
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Hood-Save"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Trench-izq-2neutral"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Down-Intake"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 5.0
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Copy of Trench-izq-2neutral"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

@@ -1,0 +1,113 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 0.37,
+        "y": 0.59
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 1.7317365223891112,
+        "y": 1.3072781457512275
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 2.185,
+        "y": 3.751
+      },
+      "prevControl": {
+        "x": 2.191683340987793,
+        "y": 3.310665656127721
+      },
+      "nextControl": {
+        "x": 2.1812059674654747,
+        "y": 4.000971208976408
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 2.185,
+        "y": 3.45
+      },
+      "prevControl": {
+        "x": 2.1171524108421362,
+        "y": 3.690617340699846
+      },
+      "nextControl": {
+        "x": 2.2539469839900312,
+        "y": 3.205483722518778
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 2.185,
+        "y": 3.631
+      },
+      "prevControl": {
+        "x": 2.1724070071071426,
+        "y": 3.3634074080956142
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.15684647302904872,
+      "rotationDegrees": 0.0
+    },
+    {
+      "waypointRelativePos": 1.292116182572605,
+      "rotationDegrees": 38.0
+    },
+    {
+      "waypointRelativePos": 2.482157676348507,
+      "rotationDegrees": -22.0
+    }
+  ],
+  "constraintZones": [
+    {
+      "name": "Constraints Zone",
+      "minWaypointRelativePos": 0.8188585607940635,
+      "maxWaypointRelativePos": 3.0,
+      "constraints": {
+        "maxVelocity": 1.8,
+        "maxAcceleration": 3.0,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 720.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 8.507
+  },
+  "reversed": false,
+  "folder": "1_Opost-PreCar",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": -90.0
+  },
+  "useDefaultConstraints": true
+}
