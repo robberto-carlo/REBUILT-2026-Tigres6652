@@ -15,69 +15,33 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Indexer extends SubsystemBase {
+    private static final boolean INVERTIR_INDEXER_MAIN = true;
+    private static final boolean INVERTIR_INDEXER_BANDAS = true;
 
-    private final SparkFlex indexerMotorMain = new SparkFlex(15, MotorType.kBrushless);
-    private final SparkFlex indexerMotorBanda = new SparkFlex(17, MotorType.kBrushless);
-
-    /*private final SparkFlexConfig configMain = new SparkFlexConfig();
-    private final SparkClosedLoopController pidMain = indexerMotorMain.getClosedLoopController();
-    private final RelativeEncoder encoderMain = indexerMotorMain.getEncoder(); */
-
-    private static final double VELOCIDAD_INDEXER_MAIN = 0.45; // 0.45
-    private static final double VELOCIDAD_INDEXER_BANDA = 0.35; // 0.35 
+    private static final double VELOCIDAD_INDEXER_MAIN = 0.35; // 0.45
     private static final double VELOCIDAD_INDEXER_MAIN_INVERTIDA = 0.20; //0.20
-    private static final double VELOCIDAD_INDEXER_BANDA_INVERTIDA = 0.10; // 0.10
-    
+    private static final double VELOCIDAD_INDEXER_BANDA = 0.35; // 0.35 
+    private static final double VELOCIDAD_INDEXER_BANDA_INVERTIDA = 0.35; // 0.35
+
+
+    private final SparkFlex indexerMotorMain = new SparkFlex(17, MotorType.kBrushless);
+    private final SparkFlex indexerMotorBanda = new SparkFlex(15, MotorType.kBrushless);
     private boolean activoMain = false;
     private boolean activoBanda = false;
-    //private double targetRPM = 0.0;
 
-    /*private static final double RPM_TOLERANCE = 100;
-    private double KP = 0.0001; //0.0002 
-    private double KI = 0.0;
-    private double KD = 0.0;
-    private double KF = 0.00019; //0.00017 */
-    public Indexer(){
-        configurarMotor();
-        inicializarDashboard();
-    }
-
-    public void configurarMotor(){
-        //configMain.inverted(true); 
-
-        /*configMain.closedLoop
-            //.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-            .p(KP).i(KI).d(KD)
-            .velocityFF(KF);
-
-        indexerMotorMain.configure(
-            configMain,
-            ResetMode.kResetSafeParameters,
-            PersistMode.kPersistParameters
-        );*/
-    }
-
-    public void inicializarDashboard() {
-        //SmartDashboard.putNumber("Indexer Target", targetRPM);
-
-        /*SmartDashboard.putNumber("KP", KP);
-        SmartDashboard.putNumber("KI", KI);
-        SmartDashboard.putNumber("KD", KD);
-        SmartDashboard.putNumber("KF", KF);*/
-    }
-
-
-    public void activarMainPorcentaje() {
-        indexerMotorMain.set(VELOCIDAD_INDEXER_MAIN);
+    //public Indexer(){}
+    //////////////////////// FUNCIONES PARA EL MAIN MOTOR DEL INDEXER ////////////////////////
+    public void activarMain() {
+        indexerMotorMain.set(VELOCIDAD_INDEXER_MAIN * orientationMain());
         activoMain = true;
     }
 
-    public void invertirMainPorcentaje() {
-        indexerMotorMain.set(-VELOCIDAD_INDEXER_MAIN_INVERTIDA);
+    public void invertirMain() {
+        indexerMotorMain.set(-VELOCIDAD_INDEXER_MAIN_INVERTIDA * orientationMain());
         activoMain = true;
     }
 
-    public void desactivarMainPorcentaje() {
+    public void desactivarMain() {
         indexerMotorMain.set(0.0);
         activoMain = false;
     }
@@ -86,42 +50,18 @@ public class Indexer extends SubsystemBase {
         return activoMain;
     }
 
-//////////////////// PID ////////////////////
-
-    /*public void activarMainPID() {
-        pidMain.setReference(targetRPM, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
-        activoMain = true;
-    }
-
-    public void invertirMainPID() {
-        pidMain.setReference(1200, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
-        activoMain = true;
-    }
-
-    public void desactivarMainPID() {
-        pidMain.setReference(0, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
-        activoMain = false;
-    }
-
-    public boolean atSetpoint() {
-        return Math.abs(encoderMain.getVelocity() - targetRPM) <= RPM_TOLERANCE;
-    }*/
-
-////////////////////////////////////////////////
-
-
-
-    public void activarBandaPorcentaje() {
-        indexerMotorBanda.set(VELOCIDAD_INDEXER_BANDA);
+    //////////////////////// FUNCIONES PARA EL MOTOR DE LAS BANDAS DEL INDEXER ////////////////////////
+    public void activarBandas() {
+        indexerMotorBanda.set(VELOCIDAD_INDEXER_BANDA * orientationBandas());
         activoBanda = true;
     }
 
-    public void invertirBandaPorcentaje() {
-        indexerMotorBanda.set(-VELOCIDAD_INDEXER_BANDA_INVERTIDA);
+    public void invertirBandas() {
+        indexerMotorBanda.set(-VELOCIDAD_INDEXER_BANDA_INVERTIDA * orientationBandas());
         activoBanda = true;
     }
 
-    public void desactivarBandaPorcentaje() {
+    public void desactivarBandas() {
         indexerMotorBanda.set(0.0);
         activoBanda = false;
     }
@@ -132,21 +72,22 @@ public class Indexer extends SubsystemBase {
 
     @Override
     public void periodic() {
-        updateDashboard();
-        //SmartDashboard.putNumber("Indexer Target", targetRPM);
-        //SmartDashboard.putNumber("Indexer Main RPM", encoderMain.getVelocity());
-        
-        //SmartDashboard.putBoolean("Indexer Main Activo", atSetpoint());        
         SmartDashboard.putBoolean("Indexer Main Activo", activoMain);
         SmartDashboard.putBoolean("Indexer Banda Activo", activoBanda);
     }
 
-    public void updateDashboard(){
-        /*targetRPM = SmartDashboard.getNumber("Indexer Target", targetRPM);
-
-        KP = SmartDashboard.getNumber("KP", KP);
-        KI = SmartDashboard.getNumber("KI", KI);
-        KD = SmartDashboard.getNumber("KD", KD);
-        KF = SmartDashboard.getNumber("KF", KF);*/
+    public int orientationMain() {
+        if(INVERTIR_INDEXER_MAIN){
+            return -1;
+        }else{
+            return 1;
+        }
+    }
+    public int orientationBandas() {
+        if(INVERTIR_INDEXER_BANDAS){
+            return -1;
+        }else{
+            return 1;
+        }
     }
 }

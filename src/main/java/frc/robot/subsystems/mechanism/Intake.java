@@ -16,6 +16,14 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Intake extends SubsystemBase{
+    // La variables VELOCIDAD_RODILLO es para la VELOCIDAD CONSTANTE del RODILLO DEL INTAKE al agarrar FUELS
+    private static final double VELOCIDAD_RODILLO = 0.6; //0.30
+    private static final double VELOCIDAD_RODILLO_PIVOTEO = 0.6; //0.45 - 0.7
+
+    // Si van a calibrar PID de Intake de poscion, volver True, y veran en ShuffleBoard en los datos del PID del INTAKE DE POSICION
+    private static final boolean INTAKE_CHANGE_PID = false; // NO TENER EN TRUE MAS DE UNO PARA SACAR PIDS;
+
+
     private final TalonFX motorPosicion = new TalonFX(18);
     private final TalonFX motorRodillo = new TalonFX(19);
 
@@ -25,27 +33,29 @@ public class Intake extends SubsystemBase{
 
     private static final double REDUCCION = 3.7698;
     private static final double TOLERANCIA_GRADOS = 5;
-    private static final double VELOCIDAD_RODILLO = 0.40; //0.4
 
-    private double KS = 0.35;
-    private double KV = 0.12; // 0.12
-    private double KA = 0.01;
-    private double KG = 0.02;
+    private double KS = 0.45;
+    private double KV = 0.25; // 0.12
+    private double KA = 0.15;
+    private double KG = 0.2;
 
-    private double KP = 18.0;
+    private double KP = 30.0;
     private double KI = 0.0;
     private double KD = 0.0;
 
-    private double VEL = 12.0;
-    private double ACC = 15.0; // Aumentarle a este valor (Probablemente)
-    private double JERK = 40.0;
+    private double VEL = 55.0;
+    private double ACC = 50.0; // Aumentarle a este valor (Probablemente)
+    private double JERK = 160.0;
 
     private double posicionObjetivo = 0.0;
     private double posicionActual = 0.0;
+    private boolean isPivoteDown = false;
+    private boolean disableAutoPivote = false;
+
 
     public Intake() {
         configurarMotor();
-        resetEncoder();
+        resetEncoder_Init();
         inicializarDashboard();
     }
 
@@ -53,7 +63,7 @@ public class Intake extends SubsystemBase{
         var cfgPosicion = new TalonFXConfiguration();
         CurrentLimitsConfigs m_currentLimits = new CurrentLimitsConfigs();
         
-        cfgPosicion.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        cfgPosicion.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         cfgPosicion.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         
         cfgPosicion.Slot0.kS = KS; //para que arranque el voltaje 
@@ -78,7 +88,7 @@ public class Intake extends SubsystemBase{
         cfgPosicion.CurrentLimits = m_currentLimits;
 
         TalonFXConfiguration cfgRodillo = new TalonFXConfiguration();
-        cfgRodillo.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+        cfgRodillo.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
         cfgRodillo.CurrentLimits = m_currentLimits;
 
         motorPosicion.getConfigurator().apply(cfgPosicion);
@@ -87,19 +97,20 @@ public class Intake extends SubsystemBase{
 
     public void inicializarDashboard() {
         SmartDashboard.putNumber("Intake Target", posicionObjetivo);
+        if(INTAKE_CHANGE_PID){
+            SmartDashboard.putNumber("KS", KS);
+            SmartDashboard.putNumber("KV", KV);
+            SmartDashboard.putNumber("KA", KA);
+            SmartDashboard.putNumber("KG", KG);
 
-        /*SmartDashboard.putNumber("KS", KS);
-        SmartDashboard.putNumber("KV", KV);
-        SmartDashboard.putNumber("KA", KA);
-        SmartDashboard.putNumber("KG", KG);
+            SmartDashboard.putNumber("KP", KP);
+            SmartDashboard.putNumber("KI", KI);
+            SmartDashboard.putNumber("KD", KD);
 
-        SmartDashboard.putNumber("KP", KP);
-        SmartDashboard.putNumber("KI", KI);
-        SmartDashboard.putNumber("KD", KD);
-
-        SmartDashboard.putNumber("VEL", VEL);
-        SmartDashboard.putNumber("ACC", ACC);
-        SmartDashboard.putNumber("JERK", JERK);¨*/
+            SmartDashboard.putNumber("VEL", VEL);
+            SmartDashboard.putNumber("ACC", ACC);
+            SmartDashboard.putNumber("JERK", JERK);
+        }
     }
     
     private double gradosAMotorRot(double grados) {
@@ -114,8 +125,10 @@ public class Intake extends SubsystemBase{
 
     public double getAnguloObjetivo(int nivel) {
         switch (nivel) {
-            case 0: return 0.0;
-            case 1: return 480.0; //370
+            case 0: return 0.0; // 0
+            case 1: return 250.0; // 250 
+            case 2: return 430.0; // 490 // bajar intake en el control
+            case 3: return 448.0; // 490 // bajar intake en autonomo/automatizado
             default: return -1;
         }
     }
@@ -161,38 +174,48 @@ public class Intake extends SubsystemBase{
 
         updateDashboard();
         SmartDashboard.putNumber("Intake Angle", posicionActual);
-        SmartDashboard.putNumber("Intake Target", posicionObjetivo);
         SmartDashboard.putBoolean("Intake Setpoint", atSetpoint());
         SmartDashboard.putNumber("Rodillos RPM", getRodillosRPM());
     }
 
         public void updateDashboard(){
-        //posicionObjetivo = SmartDashboard.getNumber("Intake Target", posicionObjetivo);
+        if(INTAKE_CHANGE_PID){
+            posicionObjetivo = SmartDashboard.getNumber("Intake Target", posicionObjetivo);
+            KS = SmartDashboard.getNumber("KS", KS);
+            KV = SmartDashboard.getNumber("KV", KV);
+            KA = SmartDashboard.getNumber("KA", KA);
+            KG = SmartDashboard.getNumber("KG", KG);
 
-        /*KS = SmartDashboard.getNumber("KS", KS);
-        KV = SmartDashboard.getNumber("KV", KV);
-        KA = SmartDashboard.getNumber("KA", KA);
-        KG = SmartDashboard.getNumber("KG", KG);
+            KP = SmartDashboard.getNumber("KP", KP);
+            KI = SmartDashboard.getNumber("KI", KI);
+            KD = SmartDashboard.getNumber("KD", KD);
 
-        KP = SmartDashboard.getNumber("KP", KP);
-        KI = SmartDashboard.getNumber("KI", KI);
-        KD = SmartDashboard.getNumber("KD", KD);
-
-        VEL = SmartDashboard.getNumber("VEL", VEL);
-        ACC = SmartDashboard.getNumber("ACC", ACC);
-        JERK = SmartDashboard.getNumber("JERK", JERK);*/
+            VEL = SmartDashboard.getNumber("VEL", VEL);
+            ACC = SmartDashboard.getNumber("ACC", ACC);
+            JERK = SmartDashboard.getNumber("JERK", JERK);
+        }else{
+            SmartDashboard.putNumber("Intake Target", posicionObjetivo);
+        }
     }
 
-    public void stopMotor(){
+    public void stopMotorPosicion(){
         motorPosicion.setControl(duty.withOutput(0.0));
+        //motorPosicion.setControl(mmControl.withPosition(motorPosicion.getPosition().getValueAsDouble()));
     }
 
     public void resetEncoder(){
         motorPosicion.setPosition(0);
     }
 
+    private void resetEncoder_Init(){
+        motorPosicion.setPosition(gradosAMotorRot(448));
+    }
     public void activarRodillos(){
         motorRodillo.set(VELOCIDAD_RODILLO);
+    }
+
+    public void activarRodillosPivotear(){
+        motorRodillo.set(VELOCIDAD_RODILLO_PIVOTEO);
     }
 
     public void invertirRodillos(){
@@ -201,5 +224,31 @@ public class Intake extends SubsystemBase{
 
     public void stopRodillos(){
         motorRodillo.set(0.0);
+    }
+
+    public void autoPivote(){ //PROBARLO SI NO FUNCIONA EN EL AUTNOMO, PROBAR ESTE
+        if(!disableAutoPivote){
+        activarRodillosPivotear();
+        if(!isPivoteDown){
+            move2Nivel(3);
+        }else{
+            move2Nivel(1);
+        }
+        if(atSetpoint()){
+            isPivoteDown=!isPivoteDown;
+        }
+        }else{
+            stopMotorPosicion();
+            stopRodillos();
+        }
+    }
+    
+
+    public void setDisableAutoPivote(boolean disable){
+        disableAutoPivote=disable;
+    }
+
+    public boolean isDisableAutoPivote(){
+        return disableAutoPivote;
     }
 }

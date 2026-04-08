@@ -4,12 +4,13 @@
   "holonomicMode": true,
   "pathFolders": [
     "1_Opost-PreCar",
-    "Opost-PreCar-Beta",
     "Hub2Trench",
     "Iniciar Cen",
     "Iniciar Der",
     "Iniciar Izq",
     "Inicio2Opost",
+    "randoms",
+    "Opost-PreCar-Beta",
     "Opost2Hub"
   ],
   "autoFolders": [],

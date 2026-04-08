@@ -6,63 +6,74 @@ import frc.robot.subsystems.mechanism.Intake;
 import java.util.function.Supplier;
 
 public class IntakeCommand extends Command {
-  private final Intake intake;
+  // La variables MAX_OUTPUT es para el LIMITE de VELOCIDAD MANUAL de la POSICION DEL INTAKE
+  private static final double MAX_OUTPUT = 0.3; // 0.35 
+  //Si van a calibrar PID de Intake de poscion, volver True, y el boton de RESETAER ENCODER DEL INTAKE, ahora el intake usara el nuevo PID
+  private static final boolean INTAKE_CHANGE_PID = false; // NO TENER EN TRUE MAS DE UNO PARA SACAR PIDS;
 
+
+  private final Intake intake;
   private final Supplier<Double> joystickLeftY;   // joystick izquierdo Y
-  private final Supplier<Boolean> botonRB,botonLB;   // RB = manual
-  private final Supplier<Boolean> povUp; // povArriba /flecha ↑
+  private final Supplier<Boolean> botonRB;// RB = manual
+  private final Supplier<Boolean> povRight; // povArriba /flecha →
+  private final Supplier<Boolean> povLeft;  // povAbajo /flecha (Flecha izq)
   private final Supplier<Boolean> povDown;  // povAbajo /flecha ↓
-  private final Supplier<Boolean> povLeft;  // povReset /flecha →
+  private final Supplier<Boolean> botonReset;  // povReset / boton de en medio (3 lineas)
   private final Supplier<Double> gatilloLT; // activarRodillos /LT
 
   private boolean resetOld = false;
+  private boolean isPivoteDown = false;
 
   private static final int POSICION_ARRIBA = 0;
-  private static final int POSICION_BAJA   = 1;
+  private static final int POSICION_MEDIO = 1;
+  private static final int POSICION_BAJA = 2;
+  private static final int POSICION_BAJA_AUTO = 3;
 
   private static final double RODILLOS_ACTIVATION_THRESHOLD = 0.2; 
   private static final double DEADZONE_INTAKE = 0.05; 
-  private static final double MAX_OUTPUT = 0.15; 
-  private static final double VELOCIDAD_RODILLO_RPM = 2500;
-
 
   public IntakeCommand(
       Intake intake,
       Supplier<Double> joystickLeftY,
       Supplier<Boolean> botonRB,
-      Supplier<Boolean> povUp,
-      Supplier<Boolean> povDown,
+      Supplier<Boolean> povRight,
       Supplier<Boolean> povLeft,
-      Supplier<Double> gatilloLT,
-      Supplier<Boolean> botonLB) {
+      Supplier<Boolean> povDown,
+      Supplier<Boolean> botonReset,
+      Supplier<Double> gatilloLT) {
     this.intake = intake;
     this.joystickLeftY = joystickLeftY;
     this.botonRB = botonRB;
-    this.povUp = povUp;
-    this.povDown = povDown;
+    this.povRight = povRight;
     this.povLeft = povLeft;
+    this.povDown = povDown;
+    this.botonReset = botonReset;
     this.gatilloLT = gatilloLT;
-    this.botonLB = botonLB;
     addRequirements(intake);
   }
 
   @Override
   public void execute() {
-    if (povUp.get()) {
+    if (povRight.get()) {
       intake.move2Nivel(POSICION_ARRIBA);
-    } else if (povDown.get()) {
+    }else if (povLeft.get()) {
       intake.move2Nivel(POSICION_BAJA);
-    } else if (botonRB.get()) {
+    }else if(povDown.get()){
+      intake.activarRodillosPivotear();
+      changeTargetPivote();
+      return;
+    }else {
+      intake.stopMotorPosicion();
+    }  
+    
+    if (botonRB.get()) {
       double joystick = deadband(joystickLeftY.get(), DEADZONE_INTAKE);
-      joystick = limitOutput(joystick);
-      intake.movimientoFree(-joystick);
-    } else {
-      intake.stopMotor();
+      intake.movimientoFree(joystick*MAX_OUTPUT);
     }
 
-    boolean reset = povLeft.get();
+    boolean reset = botonReset.get();
     if (reset && !resetOld) {
-      intake.configurarMotor(); // TEMPRORAL BORRAR DESPUES DE PRUEBAS
+      if(INTAKE_CHANGE_PID) intake.configurarMotor();
       intake.resetEncoder();
       intake.setAngle(0);
     }
@@ -70,11 +81,10 @@ public class IntakeCommand extends Command {
 
     if (gatilloLT.get() > RODILLOS_ACTIVATION_THRESHOLD) {
       intake.activarRodillos();; 
-    }else if(botonLB.get()){
-      intake.invertirRodillos();
-    }else {
+    }else{
       intake.stopRodillos();
     }
+
   }
 
   private double deadband(double value, double db) {
@@ -84,13 +94,18 @@ public class IntakeCommand extends Command {
     return value;
   }
 
-    private double limitOutput(double joystick) {
-    double abs = Math.abs(joystick);
-    if(abs>=MAX_OUTPUT){
-      return Math.copySign(MAX_OUTPUT,joystick);
+  private void changeTargetPivote(){ //SI NO FUNCIONA ESTE EN AUTONOMOS, PROBAR EL METODO PERO DEL SUBSISTEMA DEL INTAKE QUE SE LLAMA IGUAL
+    if(!isPivoteDown){
+      intake.move2Nivel(POSICION_BAJA_AUTO);
+    }else{
+      intake.move2Nivel(POSICION_MEDIO);
     }
-    return joystick;
+
+    if(intake.atSetpoint()){
+      isPivoteDown=!isPivoteDown;
+    }
   }
+
 
   @Override
   public boolean isFinished() {
@@ -99,7 +114,8 @@ public class IntakeCommand extends Command {
 
   @Override
   public void end(boolean interrupted) {
-    intake.stopMotor();
+    intake.stopMotorPosicion();
     intake.stopRodillos();
+    isPivoteDown = false;
   }
 }

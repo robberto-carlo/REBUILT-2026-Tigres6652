@@ -14,13 +14,23 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.sim.ChassisReference;
+import com.ctre.phoenix6.sim.TalonFXSimState;
 
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Hood extends SubsystemBase {
-    private final TalonFX hoodMotor = new TalonFX(14);
+    private static final boolean CALIBRAR_AUTO_SHOOT = false; // USAR PARA PODER AGREGAR UN TARGET MANUAL A LA CAPUCHA EN EL SHUFFLEBOARD
+    // Si van a calibrar PID de la capucha, volver True, y veran en ShuffleBoard en los datos del PID de la CAPUCHA
+    private static final boolean HOOD_CHANGE_PID = false; // NO TENER EN TRUE MAS DE UNO PARA SACAR PIDS;
 
+
+    private final TalonFX hoodMotor = new TalonFX(14);
     private final MotionMagicVoltage mm = new MotionMagicVoltage(0);
     private final DutyCycleOut duty = new DutyCycleOut(0);
 
@@ -28,25 +38,33 @@ public class Hood extends SubsystemBase {
 
     private static final double REDUCCION = 23.5714; 
     private static final double TOLERANCIA_GRADOS = 1.0;
-    private static final double GRADOS_SAVE_HOOD = 2.0;
+    private static final double GRADOS_SAVE_HOOD = 0.0; //2.0
 
-    private double KS = 0.7;
+    private double KS = 0.9;
     private double KV = 0.03;
-    private double KA = 0.026;
-    private double KG = 0.025;
+    private double KA = 0.1;
+    private double KG = 0.02;
 
-    private double KP = 16.0;
+    private double KP = 20.0;
     private double KI = 0.0;
     private double KD = 0.0;
 
-    private double VEL = 2.5;
-    private double ACC = 8.0;
-    private double JERK = 25.0;
+    private double VEL = 50;
+    private double ACC = 45;
+    private double JERK = 150.0;
+
+    private TalonFXSimState hoodSim;
+    private final DCMotorSim motorSim = new DCMotorSim(
+        LinearSystemId.createDCMotorSystem(
+        DCMotor.getKrakenX60Foc(1),
+        0.022, REDUCCION),  // momento de inercia 
+        DCMotor.getKrakenX60Foc(1));
 
     public Hood() {
         configurarMotor();
         resetEncoder();
         inicializarDashboard();
+        if (RobotBase.isSimulation()) simulationInit();
     }
 
     public void configurarMotor() {
@@ -69,9 +87,6 @@ public class Hood extends SubsystemBase {
         cfg.MotionMagic.MotionMagicAcceleration = ACC;
         cfg.MotionMagic.MotionMagicJerk = JERK;
 
-        /*cfg.SoftwareLimitSwitch.ForwardSoftLimitEnable = false;
-        cfg.SoftwareLimitSwitch.ForwardSoftLimitThreshold = gradosAMotorRot(35);*/
-
         m_currentLimits.withSupplyCurrentLowerLimit(Amps.of(70)) // Default limit of 70 A
             .withSupplyCurrentLimit(Amps.of(40)) // Reduce the limit to 40 A if we've limited to 70 A...
             .withSupplyCurrentLowerTime(Seconds.of(0.5)) // ...for at least 1 second
@@ -85,8 +100,8 @@ public class Hood extends SubsystemBase {
 
     public void inicializarDashboard() {
         SmartDashboard.putNumber("Hood Target", anguloObjetivo);
-
-        /*SmartDashboard.putNumber("KS", KS);
+        if(HOOD_CHANGE_PID){
+        SmartDashboard.putNumber("KS", KS);
         SmartDashboard.putNumber("KV", KV);
         SmartDashboard.putNumber("KA", KA);
         SmartDashboard.putNumber("KG", KG);
@@ -97,7 +112,8 @@ public class Hood extends SubsystemBase {
 
         SmartDashboard.putNumber("VEL", VEL);
         SmartDashboard.putNumber("ACC", ACC);
-        SmartDashboard.putNumber("JERK", JERK);*/
+        SmartDashboard.putNumber("JERK", JERK);
+        }
     }
 
     private double gradosAMotorRot(double grados) {
@@ -140,26 +156,61 @@ public class Hood extends SubsystemBase {
     @Override
     public void periodic() {
         updateDashboard();
-        SmartDashboard.putNumber("Hood Target", anguloObjetivo);
         SmartDashboard.putNumber("Hood Angle", lecturaGrados());
         SmartDashboard.putBoolean("Hood Setpoint", atSetpoint());
     }
 
     public void updateDashboard(){
-        //anguloObjetivo = SmartDashboard.getNumber("Hood Target", anguloObjetivo);
-
-        /*KS = SmartDashboard.getNumber("KS", KS);
-        KV = SmartDashboard.getNumber("KV", KV);
-        KA = SmartDashboard.getNumber("KA", KA);
-        KG = SmartDashboard.getNumber("KG", KG);
-
-        KP = SmartDashboard.getNumber("KP", KP);
-        KI = SmartDashboard.getNumber("KI", KI);
-        KD = SmartDashboard.getNumber("KD", KD);
-
-        VEL = SmartDashboard.getNumber("VEL", VEL);
-        ACC = SmartDashboard.getNumber("ACC", ACC);
-        JERK = SmartDashboard.getNumber("JERK", JERK);*/
+        if(HOOD_CHANGE_PID){
+            anguloObjetivo = SmartDashboard.getNumber("Hood Target", anguloObjetivo);
+            KS = SmartDashboard.getNumber("KS", KS);
+            KV = SmartDashboard.getNumber("KV", KV);
+            KA = SmartDashboard.getNumber("KA", KA);
+            KG = SmartDashboard.getNumber("KG", KG);
+            KP = SmartDashboard.getNumber("KP", KP);
+            KI = SmartDashboard.getNumber("KI", KI);
+            KD = SmartDashboard.getNumber("KD", KD);
+            VEL = SmartDashboard.getNumber("VEL", VEL);
+            ACC = SmartDashboard.getNumber("ACC", ACC);
+            JERK = SmartDashboard.getNumber("JERK", JERK);
+        }else if(CALIBRAR_AUTO_SHOOT){
+            anguloObjetivo = SmartDashboard.getNumber("Hood Target", anguloObjetivo);
+        }else{
+            SmartDashboard.putNumber("Hood Target", anguloObjetivo);
+        }
     }
+
+
+    public void simulationInit() {
+    hoodSim = hoodMotor.getSimState();
+
+    hoodSim.Orientation = ChassisReference.CounterClockwise_Positive;
+    hoodSim.setMotorType(TalonFXSimState.MotorType.KrakenX60);
+    motorSim.setState(0, 0);
+    hoodSim.setRawRotorPosition(0);
+    hoodSim.setRotorVelocity(0);
+    }
+    
+    @Override
+    public void simulationPeriodic() {
+        if (hoodSim == null) return;
+        // Voltaje de batería
+        hoodSim.setSupplyVoltage(edu.wpi.first.wpilibj.RobotController.getBatteryVoltage());
+
+        // Voltaje aplicado al motor
+        var motorVoltage = hoodSim.getMotorVoltageMeasure();
+
+        motorSim.setInputVoltage(motorVoltage.in(edu.wpi.first.units.Units.Volts));
+        motorSim.update(0.020);
+
+        hoodSim.setRawRotorPosition(
+            motorSim.getAngularPosition().times(REDUCCION)
+        );
+
+        hoodSim.setRotorVelocity(
+            motorSim.getAngularVelocity().times(REDUCCION)
+        );
+    }
+
 }
 

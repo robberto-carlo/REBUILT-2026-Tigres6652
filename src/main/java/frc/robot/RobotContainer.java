@@ -31,16 +31,21 @@ import frc.robot.subsystems.mechanism.Outake;
 import frc.robot.subsystems.mechanism.Intake;
 import frc.robot.subsystems.vision.LimelightSubsystem;
 import frc.robot.subsystems.vision.QuestNavSubsystem;
-
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
-  private final AutoAim autoAim;
+  // Invertir Swerve   
+  private final boolean SWERVE_EJE_X_INVERTIR = false; // eje X es adelante y atras
+  private final boolean SWERVE_EJE_Y_INVERTIR = false; // eje Y es izq y der
+  private final boolean SWERVE_ROT_INVERTIR = false; // invertir rotacion de swerve
 
+  private final double LowVelocitySwerve = 0.8; // Porcentaje maximo de velocidad de swerve al Usar boton de bajar velocidad
+
+  private final AutoAim autoAim;
   private final QuestNavSubsystem questNavSubsystem;
-  private final LimelightSubsystem limelight; 
+  private final LimelightSubsystem limelightFront; 
 
   private final Intake intake = new Intake();
   private final Outake outake = new Outake();
@@ -49,6 +54,7 @@ public class RobotContainer {
 
   // Varibles para activar comandos en autonomos
   private boolean autoShootEnabled = false;
+  private boolean pivotearEnabled = false;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -63,8 +69,8 @@ public class RobotContainer {
   }
 
   // Limelight
-  public LimelightSubsystem getLimelight() {
-    return limelight;
+  public LimelightSubsystem getLimelightFront() {
+    return limelightFront;
   }
 
   // Drive
@@ -74,18 +80,6 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-
-    intake.setDefaultCommand(
-      new IntakeCommand(
-          intake,
-          () -> controller2.getRawAxis(1),   // joystick izquierdo /eje Y
-          () -> controller2.getRawButton(6), // BlqManual /RB 
-          () -> controller2.getPOV() == 90,    // Subir Intake /flecha →
-          () -> controller2.getPOV() == 270,  // Bajar Intake /flecha ←
-          () -> controller2.getRawButton(8), // Reset Intake // boton en medio (3 lineas)
-          () -> controller2.getRawAxis(2), // activarRodillos /LT  
-          () -> controller2.getRawButton(5))); // Invertir rodillos /LB
-
     switch (Constants.currentMode) {
       case REAL:
         // Real robot, instantiate hardware IO implementations
@@ -123,7 +117,7 @@ public class RobotContainer {
 
     questNavSubsystem = new QuestNavSubsystem(drive.getPoseEstimator());
     drive.setQuestNavSubsystem(questNavSubsystem);
-    limelight = new LimelightSubsystem(drive, "limelight-front"); 
+    limelightFront = new LimelightSubsystem(drive, "limelight-front"); 
     autoAim = new AutoAim(drive);
 
     // Comandos de Autonomos de pathplaner
@@ -134,6 +128,15 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "AutoShoot-Off",
         Commands.runOnce(() -> autoShootEnabled = false));
+
+    NamedCommands.registerCommand(
+        "Pivote-On",
+        new RunCommand(() -> intake.autoPivote(), intake)
+          .withTimeout(4));
+
+    NamedCommands.registerCommand(
+        "Pivote-Off",
+        new InstantCommand(() -> intake.stopRodillos(), intake));
 
     NamedCommands.registerCommand(
         "Intake-On",
@@ -147,23 +150,19 @@ public class RobotContainer {
         "Up-Intake",
         new RunCommand(() -> intake.move2Nivel(0), intake)
             .until(() -> intake.atSetpoint())
-            .withTimeout(2.5));
+            .withTimeout(3));
 
     NamedCommands.registerCommand(
         "Down-Intake",
-        new RunCommand(() -> intake.move2Nivel(1), intake) 
+        new RunCommand(() -> intake.move2Nivel(3), intake) 
             .until(() -> intake.atSetpoint())
-            .withTimeout(2.5));
+            .withTimeout(3));
 
     NamedCommands.registerCommand(
-        "Hood-Save",
-        new InstantCommand(() -> hood.saveZone())
-        .withTimeout(1.5)); //1.5
-
-      NamedCommands.registerCommand(
-        "Hood-preShoot",
-        new InstantCommand(() -> hood.preShoot())
-        .withTimeout(1.0));
+        "Down-Intake-Auto",
+        new RunCommand(() -> intake.move2Nivel(3), intake) 
+            .until(() -> intake.atSetpoint())
+            .withTimeout(4));
 
     NamedCommands.registerCommand(
         "AutoAim_Hub",
@@ -173,24 +172,6 @@ public class RobotContainer {
             () -> 0.0,() -> 0.0,() -> 0.0)
             .until(() -> autoAim.autoAimHubFinished())
             .withTimeout(2)); //2s
-
-    NamedCommands.registerCommand(
-        "AutoAim_TrenchForward",
-        new AutoAimCommand(
-            autoAim,
-            1,
-            () -> 0.0,() -> 0.0,() -> 0.0)
-            .until(() -> autoAim.isRouteFinished())
-            .withTimeout(7));
-
-    NamedCommands.registerCommand(
-        "AutoAim_TrenchBackward",
-        new AutoAimCommand(
-            autoAim,
-            2,
-            () -> 0.0,() -> 0.0,() -> 0.0)
-            .until(() -> autoAim.isRouteFinished())
-            .withTimeout(7));
 
     /// Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -206,9 +187,9 @@ public class RobotContainer {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> -controller.getLeftY() * allianceFlip(),
-            () -> -controller.getLeftX() * allianceFlip(),
-            () -> -controller.getRightX()));
+            () -> -controller.getLeftY() * allianceFlip_ejeX() * changeVelocitySwerve(),
+            () -> -controller.getLeftX() * allianceFlip_ejeY() * changeVelocitySwerve(),
+            () -> -controller.getRightX() * allianceFlip_rot()));
 
     // Switch to X pattern when X button is pressed
     controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
@@ -235,27 +216,15 @@ public class RobotContainer {
     
     controller.rightBumper().whileTrue(new AutoAimCommand(autoAim, 
                                       0,
-                                      () -> -controller.getLeftY() * allianceFlip(),
-                                      () -> -controller.getLeftX() * allianceFlip(),
-                                      () -> -controller.getRightX())); // RB - auto apuntado al HUB
+                                      () -> -controller.getLeftY() * allianceFlip_ejeX() * changeVelocitySwerve(),
+                                      () -> -controller.getLeftX() * allianceFlip_ejeY() * changeVelocitySwerve(),
+                                      () -> -controller.getRightX() * allianceFlip_rot())); // RB - auto apuntado al HUB
 
     controller.leftBumper().whileTrue(new AutoAimCommand(autoAim, 
                                       5,
-                                      () -> -controller.getLeftY() * allianceFlip(),
-                                      () -> -controller.getLeftX() * allianceFlip(),
-                                      () -> -controller.getRightX())); // LB - auto apuntado a Zona de ALIANZA
-
-    /*controller.povRight().whileTrue(new AutoAimCommand(autoAim, 
-                                      4,
-                                      () -> -controller.getLeftY(),
-                                      () -> -controller.getLeftX(),
-                                      () -> -controller.getRightX())); // Flecha derecha - Ir a tower derecha
-
-    controller.povLeft().whileTrue(new AutoAimCommand(autoAim, 
-                                      3,
-                                      () -> -controller.getLeftY(),
-                                      () -> -controller.getLeftX(),
-                                      () -> -controller.getRightX())); // Flecha izquierda - Ir a tower izquierda*/
+                                      () -> -controller.getLeftY() * allianceFlip_ejeX() * changeVelocitySwerve(),
+                                      () -> -controller.getLeftX() * allianceFlip_ejeY() * changeVelocitySwerve(),
+                                      () -> -controller.getRightX() * allianceFlip_rot())); // LB - auto apuntado a Zona de ALIANZA
 
     outake.setDefaultCommand(
         new ShooterCommand(
@@ -267,15 +236,28 @@ public class RobotContainer {
             () -> controller.povUp().getAsBoolean(), // pov arriba del Driver 1 / flecha ↑
             () -> controller.povDown().getAsBoolean(), // pov abajo del Driver 1 / flecha ↓
             () -> controller2.getRawButton(7), // Reset Hood / boton en medio (2 cuadros)
-            () -> controller2.getRawButton(4), // Y - Disparo de media distancia
+            () -> controller2.getRawButton(4), // Y -  Aumentar 200 RPMs Shooter 
             () -> controller2.getRawButton(3), // X - Disparo de poca distancia
-            () -> controller2.getRawButton(1), // A - Activar indexer
+            () -> controller2.getRawButton(1), // A - Disparo a Nuestra Alianza
             () -> controller2.getRawButton(2) || autoShootEnabled, // B - shooter automatico
             () -> controller2.getRawButton(6), // RB - BlqFree
             () -> controller2.getRawAxis(2), // LT - Bandas Indexer Invertidas
-            () -> controller2.getPOV() == 0,   // disparo para filling / flecha ↑
-            () -> controller2.getPOV() == 180, // bajar la capucha / flecha ↓
-            () -> controller2.getRawAxis(3)));  // RT - Indexer(Neo) ir de reversa
+            () -> controller2.getPOV() == 0,   // Disparo de media distancia / flecha ↑
+            () -> controller2.getRawButton(5), // LB - Bloquar Indexer
+            () -> controller2.getRawAxis(3),  // RT - Aumentar 100 RPMs Shooter
+            () -> controller2.getRawButton(10), // Jostikc Der Boton- Activar indexer  
+            () -> controller2.getRawButton(9))); // Jostikc Izq Boton- Indexer de reversa 
+
+      intake.setDefaultCommand(
+      new IntakeCommand(
+          intake,
+          () -> controller2.getRawAxis(1),   // joystick izquierdo /eje Y
+          () -> controller2.getRawButton(6), // BlqManual /RB 
+          () -> controller2.getPOV() == 90,    // Subir Intake /flecha →
+          () -> controller2.getPOV() == 270,  // Bajar Intake /flecha ←
+          () -> controller2.getPOV() == 180 || pivotearEnabled,  // Subir y bajar Intake /flecha (ARRIBA)
+          () -> controller2.getRawButton(8), // Reset Intake // boton en medio (3 lineas)
+          () -> controller2.getRawAxis(2))); // activarRodillos /LT  
   }
 
   // Varibles de los comandos de Autonomos
@@ -283,13 +265,44 @@ public class RobotContainer {
     autoShootEnabled = enabled;
   }
 
+  public void setPivotearEnabled(boolean enabled){
+    pivotearEnabled = enabled;
+  }
+
   public Command getAutonomousCommand() {
     // return DriveCommands.drivefor(drive, 3);
     return autoChooser.get();
   }
 
-  private double allianceFlip() {
-    return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red ? -1.0 : 1.0;
+  private int allianceFlip_ejeX() {
+    if(!SWERVE_EJE_X_INVERTIR){
+      return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red ? -1 : 1;
+    }else{
+      return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red ? 1 : -1; 
+    }
+  }
+
+  private int allianceFlip_ejeY() {
+    if(!SWERVE_EJE_Y_INVERTIR){
+      return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red ? -1 : 1;
+    }else{
+      return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red ? 1 : -1; 
+    }
+  }
+
+    private int allianceFlip_rot() {
+      if(!SWERVE_ROT_INVERTIR){
+        return 1;
+      }else{
+        return -1;
+      }
+    }
+  private double changeVelocitySwerve() {
+    if(controller.getLeftTriggerAxis() < 0.2){
+      return 1;
+    }else{
+      return LowVelocitySwerve; 
+    }
   }
 
   private Rotation2d getAllianceHeading() {

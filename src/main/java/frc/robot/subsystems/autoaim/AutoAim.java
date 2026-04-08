@@ -47,11 +47,11 @@ public class AutoAim extends SubsystemBase {
   private static double MAX_OUTPUT_ROT = Math.toRadians(300); // 0.55 - 360 grad
   private static double MIN_OUTPUT_ROT = Math.toRadians(45);; // 0.10 - 40grad
   private static final double MAX_OUTPUT_ROT_HUB = 0.60; // 0.60
-  private static final double MIN_OUTPUT_ROT_HUB = 0.10; // 0.10 - 0.15
+  private static final double MIN_OUTPUT_ROT_HUB = 0.12; // 0.10 - 0.15
 
   private static final double ERROR_PID = 0.05; // en metros (x,y) --- 0.07
   private static final double ERROR_DEGREES_PID = 2; // en grados (rotacion) --- 3
-  private static final double ERROR_DEGREES_HUB_PID = 1.5; // en grados (rotacion) --- 1
+  private static final double ERROR_DEGREES_HUB_PID = 0.6; // en grados (rotacion) --- 1 - 1.5
 
   private static double ERROR_X_ADVANCE = 0.07; // en metros (x,y) --- 0.1
   private static double ERROR_Y_ADVANCE = 0.07; // en metros (x,y) --- 0.1

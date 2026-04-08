@@ -5,15 +5,15 @@
     "data": {
       "commands": [
         {
-          "type": "path",
+          "type": "named",
           "data": {
-            "pathName": "centro"
+            "name": "Down-Intake"
           }
         },
         {
-          "type": "wait",
+          "type": "path",
           "data": {
-            "waitTime": 0.8
+            "pathName": "Denver-centro-disp"
           }
         },
         {
@@ -31,19 +31,19 @@
         {
           "type": "named",
           "data": {
-            "name": "Intake-On"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 4.5
+            "name": "Pivote-On"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "Intake-Off"
+            "name": "Pivote-On"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Pivote-Off"
           }
         },
         {
@@ -53,15 +53,9 @@
           }
         },
         {
-          "type": "wait",
+          "type": "path",
           "data": {
-            "waitTime": 0.6
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Hood-Save"
+            "pathName": "Denver-centro-adelante"
           }
         }
       ]

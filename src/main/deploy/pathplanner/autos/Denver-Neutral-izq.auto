@@ -5,15 +5,33 @@
     "data": {
       "commands": [
         {
-          "type": "path",
+          "type": "named",
           "data": {
-            "pathName": "Izq-90G-Atras"
+            "name": "Down-Intake"
           }
         },
         {
-          "type": "wait",
+          "type": "named",
           "data": {
-            "waitTime": 0.8
+            "name": "Intake-On"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Denver-Neutral-izq-1"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-Off"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Denver-Neutral-izq-2"
           }
         },
         {
@@ -31,61 +49,25 @@
         {
           "type": "named",
           "data": {
-            "name": "Intake-On"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 4.5
+            "name": "Pivote-On"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "Intake-Off"
+            "name": "Pivote-On"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Pivote-Off"
           }
         },
         {
           "type": "named",
           "data": {
             "name": "AutoShoot-Off"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 0.6
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Hood-Save"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Trench-izq-2neutral"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Down-Intake"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 5.0
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Copy of Trench-izq-2neutral"
           }
         }
       ]

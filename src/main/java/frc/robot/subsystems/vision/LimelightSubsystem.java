@@ -35,12 +35,23 @@ public class LimelightSubsystem extends SubsystemBase {
 
   @Override
   public void periodic(){
-    if (!isLimelightConnected()) {
+
+    boolean connected = isLimelightConnected();
+    Logger.recordOutput("Vision/" + limelightName + "/Connected", connected);
+
+    if (!connected) {
+      updateDashboard("Disconnected", "None", 0, 0.0, false);
+      hasVision = false;
+      hasTagCount = false;
+      return; 
+    }
+
+    /*if (!isLimelightConnected()) {
       Logger.recordOutput("Vision/" + limelightName + "/State", "Disconnected");
       updateDashboard("Disconnected", "None", 0, 0.0, false);
       hasVision = false;
       return;
-    }
+    }*/
 
     if (Math.abs(drive.getAngularVelocityDegPerSec()) > MAX_ANGULAR_VEL_DEG_PER_SEC) {
       Logger.recordOutput("Vision/" + limelightName + "/State", "TooFast");
@@ -180,6 +191,13 @@ public class LimelightSubsystem extends SubsystemBase {
   public boolean hasVision() {
     return hasVision;
   }
+
+  /*private boolean isLimelightConnected() {
+    return NetworkTableInstance.getDefault()
+        .getTable(limelightName)
+        .getEntry("tv")
+        .getDouble(0) != 0;
+  }*/
 
   private boolean isLimelightConnected() {
       return NetworkTableInstance.getDefault()

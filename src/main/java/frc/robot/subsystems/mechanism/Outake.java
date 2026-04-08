@@ -16,6 +16,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Outake extends SubsystemBase {
+  private static final boolean CALIBRAR_AUTO_SHOOT = false; // USAR PARA PODER AGREGAR UN TARGET MANUAL A EL OUTAKE EN EL SHUFFLEBOARD
+  // Si van a calibrar PID deL OUTAKE, volver True, y veran en ShuffleBoard en los datos del PID del OUTAKE
+  private static final boolean OUTAKE_CHANGE_PID = false; // NO TENER EN TRUE MAS DE UNO PARA SACAR PIDS;
+
+
   private final TalonFX master = new TalonFX(13); // motor Izquierda
   private final TalonFX follower = new TalonFX(16); // motor Derecha
 
@@ -27,13 +32,13 @@ public class Outake extends SubsystemBase {
   private static final double RPM_TOLERANCE = 100;
   private static final double STABLE_TIME = 0.10; // segundos 0.10
 
-  private double KS = 0.35;
-  private double KV = 0.11; //0.11
-  private double KA = 0.004;
+  private double KS = 0.45; // 0.35 - 0.5
+  private double KV = 0.11; //0.12 - 0.115
+  private double KA = 0.1; //0.004 - 0.2
 
-  private double KP = 0.8; //0.8
-  private double KI = 0.0;
-  private double KD = 0.0;
+  private double KP = 0.75; //0.9 - 0.8
+  private double KI = 0.14; //0.0
+  private double KD = 0.0; //0.0
 
   public Outake() {
     configurarMotor();
@@ -41,7 +46,7 @@ public class Outake extends SubsystemBase {
     inicializarDashboard();
   }
 
-  private void configurarMotor(){
+  public void configurarMotor(){
     TalonFXConfiguration cfg = new TalonFXConfiguration();
     CurrentLimitsConfigs m_currentLimits = new CurrentLimitsConfigs();
 
@@ -70,14 +75,15 @@ public class Outake extends SubsystemBase {
 
   public void inicializarDashboard() {
     SmartDashboard.putNumber("Outake Target", targetRPM);
-
-    /*SmartDashboard.putNumber("KS", KS);
+    if(OUTAKE_CHANGE_PID){
+    SmartDashboard.putNumber("KS", KS);
     SmartDashboard.putNumber("KV", KV);
     SmartDashboard.putNumber("KA", KA);
 
     SmartDashboard.putNumber("KP", KP);
     SmartDashboard.putNumber("KI", KI);
-    SmartDashboard.putNumber("KD", KD);*/
+    SmartDashboard.putNumber("KD", KD);
+    }
   }
 
   public void setRPM(double rpm) {
@@ -89,7 +95,6 @@ public class Outake extends SubsystemBase {
   }
 
   public void stop() {
-    //targetRPM = 0.0;
     master.stopMotor();
   }
 
@@ -118,20 +123,23 @@ public class Outake extends SubsystemBase {
     }
 
     updateDashboard();
-    SmartDashboard.putNumber("Outake Target", targetRPM);
     SmartDashboard.putNumber("Outake RPM", getRPM());
     SmartDashboard.putBoolean("Outake Setpoint", atSetpoint());
   }
 
   public void updateDashboard(){
-    //targetRPM = SmartDashboard.getNumber("Outake Target", targetRPM);
-
-    /*KS = SmartDashboard.getNumber("KS", KS);
-    KV = SmartDashboard.getNumber("KV", KV);
-    KA = SmartDashboard.getNumber("KA", KA);
-
-    KP = SmartDashboard.getNumber("KP", KP);
-    KI = SmartDashboard.getNumber("KI", KI);
-    KD = SmartDashboard.getNumber("KD", KD);*/
+    if(OUTAKE_CHANGE_PID){
+      targetRPM = SmartDashboard.getNumber("Outake Target", targetRPM);
+      KS = SmartDashboard.getNumber("KS", KS);
+      KV = SmartDashboard.getNumber("KV", KV);
+      KA = SmartDashboard.getNumber("KA", KA);
+      KP = SmartDashboard.getNumber("KP", KP);
+      KI = SmartDashboard.getNumber("KI", KI);
+      KD = SmartDashboard.getNumber("KD", KD);
+    }else if(CALIBRAR_AUTO_SHOOT){
+      targetRPM = SmartDashboard.getNumber("Outake Target", targetRPM);
+    }else{
+      SmartDashboard.putNumber("Outake Target", targetRPM);
+    }
   }
 }

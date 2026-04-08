@@ -17,6 +17,7 @@ import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants.DriveMotorArrangement;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants.SteerMotorArrangement;
 import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.net.PortForwarder;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -28,6 +29,7 @@ import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
+
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -174,6 +176,8 @@ public class Robot extends LoggedRobot {
   @Override
   public void disabledInit() {
     robotContainer.setAutoShootEnabled(false);
+    robotContainer.setPivotearEnabled(false);
+
   }
 
   /** This function is called periodically when disabled. */
@@ -204,6 +208,7 @@ public class Robot extends LoggedRobot {
       autonomousCommand.cancel();
     }
     robotContainer.setAutoShootEnabled(false);
+    robotContainer.setPivotearEnabled(false);
   }
 
   /** This function is called periodically during operator control. */

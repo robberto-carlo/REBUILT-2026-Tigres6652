@@ -5,27 +5,33 @@
     "data": {
       "commands": [
         {
-          "type": "path",
-          "data": {
-            "pathName": "90-Opost-trenchDer"
-          }
-        },
-        {
           "type": "named",
           "data": {
             "name": "Down-Intake"
           }
         },
         {
-          "type": "wait",
+          "type": "named",
           "data": {
-            "waitTime": 3.5
+            "name": "Intake-On"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Opost2HUB-Cen-Atras"
+            "pathName": "Denver-Neutral-der-1"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Intake-Off"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Denver-Neutral-der-2"
           }
         },
         {
@@ -43,19 +49,19 @@
         {
           "type": "named",
           "data": {
-            "name": "Intake-On"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 4.5
+            "name": "Pivote-On"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "Intake-Off"
+            "name": "Pivote-On"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Pivote-Off"
           }
         },
         {

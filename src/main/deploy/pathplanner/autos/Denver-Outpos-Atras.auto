@@ -5,27 +5,45 @@
     "data": {
       "commands": [
         {
+          "type": "named",
+          "data": {
+            "name": "Down-Intake"
+          }
+        },
+        {
           "type": "path",
           "data": {
-            "pathName": "Der-0G-Atras"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Pivote-On"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Pivote-Off"
+            "pathName": "Denver-Outpos-1"
           }
         },
         {
           "type": "wait",
           "data": {
-            "waitTime": 5.0
+            "waitTime": 4.0
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Denver-Outpos-Atras"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoAim_Hub"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot-On"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Pivote-On"
           }
         },
         {
@@ -38,6 +56,12 @@
           "type": "named",
           "data": {
             "name": "Pivote-Off"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoShoot-Off"
           }
         }
       ]

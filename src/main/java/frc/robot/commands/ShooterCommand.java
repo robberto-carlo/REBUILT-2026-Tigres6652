@@ -9,68 +9,82 @@ import frc.robot.subsystems.mechanism.Indexer;
 import frc.robot.subsystems.mechanism.Outake;
 
 public class ShooterCommand extends Command {
+    // La variables MAX_OUTPUT_HOOD es para el LIMITE de VELOCIDAD MANUAL de la CAPUCHA
+    private static final double MAX_OUTPUT_HOOD = 0.15; // 0.15
+    //Si van a calibrar PID de OUTAKE o CAPUCHA de poscion --- O VAN A HACER LA TABLA DE DISPAROS, volver True 
+    //al usar el boton B, ahora los mecanismos usaran el nuevo PID, independientemente si estas calirbado CAPUCHA o OUTAKE
+    //el boton X mueve la capucha a el angulo que le pongas, y el boton Y se mueve a los RPMs que le pongas en el traget en el SHUFFLEBOARD
+    private static final boolean CALIBRAR_AUTO_SHOOT = false; // FALSE SI VAMOS A IR A MATCH
+
+
+    // RT -ya etsa - agreagr funvion 100rpm
+    // A - ya esta - boton de fileo
+    // jsotik izq presionado -. invetir indexer 
+    // ohsotik der -a aciavr indexer 
+
     private final Outake outake;
     private final Hood hood;
     private final Indexer indexer;
     private final AutoAim autoAim;
-    private Supplier<Boolean> povUp_1Driver, povDown_1Driver, resetHood, botonY, botonX, botonA, botonB, botonRB, povUp_2Driver, povDown_2Driver;
+    private final Supplier<Boolean> botonLB;// LB = Bloquar Indexer
+    private Supplier<Boolean> povUp_1Driver, povDown_1Driver, resetHood, botonY, botonX, botonA, botonB, botonRB, povUp_2Driver;
+    private Supplier<Boolean> botonJostikcDer, botonJostikcIzq;
+
     private Supplier<Double> joystickRightY, gatilloLT, gatilloRT;
 
-    private static final double INTAKE_ACTIVATION_THRESHOLD = 0.2; 
+    private static final double INDEXER_ACTIVATION_THRESHOLD = 0.2; 
     private static final double DEADZONE_HOOD = 0.05; 
-    private static final double MAX_OUTPUT_HOOD = 0.15; 
-    //private static final double ROBOT2SHOOTER = 0.156;
 
     private double targetRPM = -1;
     private double targetAngle = -1;
     private boolean resetOld = false;
 
     // distancia del Shooter al HUB
-    public static final double[] DISTANCE = {
+    public static final double[] DISTANCE = { // 1.3
         1.0,
-        1.3,
-        1.9,
-        2.1,
+        1.5,
+        1.7,
+        2.0,
         2.3,
-        2.5,
-        2.9,
-        3.0,
-        3.3,
-        3.6, 
-        4.3,
-        4.7
+        2.65,
+        2.97,
+        3.2,
+        3.4,
+        3.8,
+        4.1,
+        4.6
     };
 
     // RPM del shooter
     public static final double[] RPM = {
-        1650,
-        1650,
-        1650, 
-        1650,  
-        1750,
-        1750,
-        1850, 
-        1850,
-        1950,
-        1950,
-        2150,
-        2300
+        2500,
+        2600,
+        2700,
+        2700,
+        2800,
+        2800,  
+        2800,
+        3000,
+        3000,
+        3200,
+        3200,
+        3500
     };
 
     // Ángulo del hood (grados)
     public static final double[] ANGLE = {
-        5.5, 
-        9, 
-        11, 
+        4, 
+        7, 
+        8,
+        9,
+        11,
+        12, 
         15, 
-        16, 
         17,
-        19, 
-        21,
-        22,
-        25,
-        23,
-        26
+        18,
+        20,
+        20,
+        23
     };
 
     public ShooterCommand(
@@ -89,8 +103,10 @@ public class ShooterCommand extends Command {
             Supplier<Boolean> botonRB,
             Supplier<Double> gatilloLT,
             Supplier<Boolean> povUp_2Driver,
-            Supplier<Boolean> povDown_2Driver,
-            Supplier<Double> gatilloRT){
+            Supplier<Boolean> botonLB,
+            Supplier<Double> gatilloRT,
+            Supplier<Boolean> botonJostikcDer,
+            Supplier<Boolean> botonJostikcIzq){ 
         this.outake = outake;
         this.hood = hood;
         this.indexer = indexer;
@@ -106,79 +122,83 @@ public class ShooterCommand extends Command {
         this.botonRB = botonRB;
         this.gatilloLT = gatilloLT;
         this.povUp_2Driver = povUp_2Driver;
-        this.povDown_2Driver = povDown_2Driver;
+        this.botonLB = botonLB;
         this.gatilloRT = gatilloRT;
+        this.botonJostikcDer = botonJostikcDer;
+        this.botonJostikcIzq = botonJostikcIzq;
         addRequirements(hood, outake, indexer);
     }
 
     @Override
-    public void initialize() {}
-
-    @Override
     public void execute(){
-        if(povUp_1Driver.get() || povDown_1Driver.get() || povDown_2Driver.get()){
-            hood.saveZone();
+        if(povUp_1Driver.get() || povDown_1Driver.get()){
+            hood.saveZone(); // Bajar capucha
             return;
         }
 
-        if(botonB.get()){
-            double distancia2HUB = autoAim.getDistanceToHub();
-            targetRPM = getRPMFromDistance(distancia2HUB);
-            targetAngle = getAngleFromDistance(distancia2HUB);
-
-            hood.setAngle(targetAngle);
-            outake.setRPM(targetRPM);
-            
-            if(hood.atSetpoint() && outake.atSetpoint()){
-                indexer.activarMainPorcentaje();
-                indexer.activarBandaPorcentaje();
+        boolean Shoot = true;
+        if(botonB.get()){ // Disparo Automatico 
+            if(CALIBRAR_AUTO_SHOOT){
+                hood.configurarMotor();
+                outake.configurarMotor();
             }else{
-                indexer.desactivarMainPorcentaje();
-                indexer.desactivarBandaPorcentaje();
+                double distancia2HUB = autoAim.getDistanceToHub();
+                targetRPM = getRPMFromDistance(distancia2HUB);
+                targetRPM = Math.round(targetRPM); // volver el RPM un numero entero
+                targetAngle = getAngleFromDistance(distancia2HUB);
+                targetAngle = Math.round(targetAngle * 10.0) / 10.0; // redondear el angulo a un decimal
+
+                if(gatilloRT.get() >= INDEXER_ACTIVATION_THRESHOLD){
+                    targetRPM += 100; // Aumentar RPM para disparo
+                }
+                if(botonY.get()){
+                    targetRPM += 200; // Aumentar RPM para disparo
+                }
+
+                outake.setRPM(targetRPM);
+                hood.setAngle(targetAngle);
+                activateIndexer();
             }
-            return;
+        }else if(botonA.get()){ // Disparar a nuestra Alianza
+            if(CALIBRAR_AUTO_SHOOT){
+                outake.setRPM(targetRPM);
+            }else{
+                hood.setAngle(25);
+                outake.setRPM(3400);
+                activateIndexer();
+            }
+        }else if(botonX.get()){ // Disparo Cercano
+            if(CALIBRAR_AUTO_SHOOT){
+                hood.setAngle(targetAngle);
+            }else{
+                hood.setAngle(9); // 8,9,11
+                outake.setRPM(2700);
+                activateIndexer();   
+            }
+        }else if(povUp_2Driver.get()){  // Disparo Lejano 
+            hood.setAngle(15); 
+            outake.setRPM(2900);
+            activateIndexer();            
+        }else{
+            Shoot = false;
+            outake.stop();
+            if(!CALIBRAR_AUTO_SHOOT) hood.saveZone();
         }
 
-        if(botonY.get()){
-            hood.setAngle(17);
-            outake.setRPM(1700);
-        }else if(botonX.get()){
-            hood.setAngle(9);
-            outake.setRPM(1650);
-        }else if(povUp_2Driver.get()){
-            hood.setAngle(25); 
-            outake.setRPM(1800);
-            
-            if(hood.atSetpoint() && outake.atSetpoint()){
-                indexer.activarMainPorcentaje();
-                indexer.activarBandaPorcentaje();
-            }else{
-                indexer.desactivarMainPorcentaje();
-                indexer.desactivarBandaPorcentaje();
-            }
-        }else if(!botonB.get()){
-            outake.stop();
-        }
-
-        /*if(botonY.get()){ // Botones para pruebas (para la tabla de rpms y angulos)
-            outake.setRPM(targetRPM);
-        }else if(!botonB.get()){
-            outake.stop();
-        } 
-        if(botonX.get()){ 
-            hood.setAngle(targetAngle);
-        }*/
-
-        if(botonA.get()){
-            indexer.activarMainPorcentaje();
-            indexer.activarBandaPorcentaje();
-        }else if(gatilloLT.get()>=INTAKE_ACTIVATION_THRESHOLD){
-            indexer.invertirBandaPorcentaje();
-        }else if(gatilloRT.get()>=INTAKE_ACTIVATION_THRESHOLD){
-            indexer.invertirMainPorcentaje();
-        }else if(!botonB.get()){
-            indexer.desactivarMainPorcentaje();
-            indexer.desactivarBandaPorcentaje();
+        if(botonLB.get()){
+            indexer.desactivarMain();
+            indexer.desactivarBandas();
+        }else if(botonJostikcDer.get()){
+            indexer.activarMain();
+            indexer.activarBandas();
+        }else if(gatilloLT.get()>=INDEXER_ACTIVATION_THRESHOLD && !Shoot){
+            indexer.invertirBandas();
+        }else if(botonJostikcIzq.get()){
+            indexer.invertirMain();
+            indexer.invertirBandas();
+        }else if(!Shoot){
+            indexer.desactivarMain();
+            indexer.desactivarBandas();
         }
 
         if(botonRB.get()){
@@ -196,8 +216,8 @@ public class ShooterCommand extends Command {
 
     @Override
     public void end(boolean interrupted) {
-        indexer.desactivarMainPorcentaje();
-        indexer.desactivarBandaPorcentaje();
+        indexer.desactivarMain();
+        indexer.desactivarBandas();
         outake.stop();
     }
 
@@ -205,8 +225,6 @@ public class ShooterCommand extends Command {
     public boolean isFinished() {
         return false; 
     }
-
-
 
     private double interpolate(
         double x,
@@ -247,5 +265,15 @@ public class ShooterCommand extends Command {
             return 0.0;
         }
         return value;
+    }
+
+    private void activateIndexer() {
+        if(hood.atSetpoint() && outake.atSetpoint()){
+            indexer.activarMain();
+            indexer.activarBandas();
+        }else{
+            indexer.desactivarMain();
+            indexer.desactivarBandas();
+        }
     }
 }
