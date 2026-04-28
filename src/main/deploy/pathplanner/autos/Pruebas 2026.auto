@@ -19,7 +19,7 @@
         {
           "type": "named",
           "data": {
-            "name": "Pivote-Off"
+            "name": "Pivote-On"
           }
         },
         {
@@ -32,12 +32,6 @@
           "type": "named",
           "data": {
             "name": "Pivote-On"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Pivote-Off"
           }
         }
       ]

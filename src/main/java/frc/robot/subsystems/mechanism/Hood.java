@@ -36,7 +36,7 @@ public class Hood extends SubsystemBase {
 
     private double anguloObjetivo = 0.0;
 
-    private static final double REDUCCION = 23.5714; 
+    private static final double REDUCCION = 26; 
     private static final double TOLERANCIA_GRADOS = 1.0;
     private static final double GRADOS_SAVE_HOOD = 0.0; //2.0
 
@@ -71,7 +71,7 @@ public class Hood extends SubsystemBase {
         TalonFXConfiguration cfg = new TalonFXConfiguration();
         CurrentLimitsConfigs m_currentLimits = new CurrentLimitsConfigs();
 
-        cfg.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        cfg.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         cfg.MotorOutput.NeutralMode = NeutralModeValue.Brake;
 
         cfg.Slot0.kS = KS;

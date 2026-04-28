@@ -11,14 +11,20 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.sim.ChassisReference;
+import com.ctre.phoenix6.sim.TalonFXSimState;
 
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Intake extends SubsystemBase{
     // La variables VELOCIDAD_RODILLO es para la VELOCIDAD CONSTANTE del RODILLO DEL INTAKE al agarrar FUELS
     private static final double VELOCIDAD_RODILLO = 0.6; //0.30
-    private static final double VELOCIDAD_RODILLO_PIVOTEO = 0.6; //0.45 - 0.7
+    private static final double VELOCIDAD_RODILLO_PIVOTEO = 0.75; //0.45 - 0.7
 
     // Si van a calibrar PID de Intake de poscion, volver True, y veran en ShuffleBoard en los datos del PID del INTAKE DE POSICION
     private static final boolean INTAKE_CHANGE_PID = false; // NO TENER EN TRUE MAS DE UNO PARA SACAR PIDS;
@@ -31,32 +37,50 @@ public class Intake extends SubsystemBase{
     private final MotionMagicVoltage mmControl = new MotionMagicVoltage(0);
     private final DutyCycleOut duty = new DutyCycleOut(0);
 
-    private static final double REDUCCION = 3.7698;
+    private static final double REDUCCION = 65.789;
     private static final double TOLERANCIA_GRADOS = 5;
 
-    private double KS = 0.45;
+    private double KS = 0.5;
     private double KV = 0.25; // 0.12
     private double KA = 0.15;
     private double KG = 0.2;
 
     private double KP = 30.0;
+    private double KP_SIM = 6.0;
     private double KI = 0.0;
     private double KD = 0.0;
 
-    private double VEL = 55.0;
-    private double ACC = 50.0; // Aumentarle a este valor (Probablemente)
-    private double JERK = 160.0;
+    private double VEL = 170.0;
+    private double ACC = 200.0; // Aumentarle a este valor (Probablemente)
+    private double JERK = 350.0;
 
     private double posicionObjetivo = 0.0;
     private double posicionActual = 0.0;
+    private int counterPivoteo=1;
+    private boolean isRodillosOn = false;
     private boolean isPivoteDown = false;
-    private boolean disableAutoPivote = false;
+    private boolean lastAtSetpoint = false;
+    private boolean autonomousPivoteoEnd = false;
+
+    // SIMULACIÓN
+    private TalonFXSimState posSim;
+    private final DCMotorSim posMotorSim = new DCMotorSim(
+        LinearSystemId.createDCMotorSystem(
+            DCMotor.getKrakenX60Foc(1),
+            0.02, // inercia (ajústalo si va muy lento/rápido)
+            REDUCCION
+        ),
+        DCMotor.getKrakenX60Foc(1)
+    );
+
+
 
 
     public Intake() {
         configurarMotor();
-        resetEncoder_Init();
+        resetEncoder_down();
         inicializarDashboard();
+        if (RobotBase.isSimulation()) simulationInit();
     }
 
     public void configurarMotor() {
@@ -71,7 +95,11 @@ public class Intake extends SubsystemBase{
         cfgPosicion.Slot0.kA = KA; //  voltaje para acelerar = voltaje/(rps/s)
         cfgPosicion.Slot0.kG = KG; // 0.35  gravedad
 
-        cfgPosicion.Slot0.kP = KP; // que tanta acelereacion hay dependiendo que tan lejos esta = voltaje/error
+        if (RobotBase.isSimulation()){
+            cfgPosicion.Slot0.kP = KP_SIM;
+        }else{
+            cfgPosicion.Slot0.kP = KP; // que tanta acelereacion hay dependiendo que tan lejos esta
+        }
         cfgPosicion.Slot0.kI = KI;
         cfgPosicion.Slot0.kD = KD;
 
@@ -88,7 +116,7 @@ public class Intake extends SubsystemBase{
         cfgPosicion.CurrentLimits = m_currentLimits;
 
         TalonFXConfiguration cfgRodillo = new TalonFXConfiguration();
-        cfgRodillo.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        cfgRodillo.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         cfgRodillo.CurrentLimits = m_currentLimits;
 
         motorPosicion.getConfigurator().apply(cfgPosicion);
@@ -126,9 +154,9 @@ public class Intake extends SubsystemBase{
     public double getAnguloObjetivo(int nivel) {
         switch (nivel) {
             case 0: return 0.0; // 0
-            case 1: return 250.0; // 250 
-            case 2: return 430.0; // 490 // bajar intake en el control
-            case 3: return 448.0; // 490 // bajar intake en autonomo/automatizado
+            case 1: return 30.0; // 250 
+            case 2: return 80.0; // 490 // bajar intake en el control
+            case 3: return 80.0; // 490 // bajar intake en autonomo/automatizado
             default: return -1;
         }
     }
@@ -166,6 +194,7 @@ public class Intake extends SubsystemBase{
 
     public void stopRodillosRPM(){
         motorRodillo.stopMotor();
+        isRodillosOn = false;
     }
 
     @Override
@@ -176,6 +205,7 @@ public class Intake extends SubsystemBase{
         SmartDashboard.putNumber("Intake Angle", posicionActual);
         SmartDashboard.putBoolean("Intake Setpoint", atSetpoint());
         SmartDashboard.putNumber("Rodillos RPM", getRodillosRPM());
+        SmartDashboard.putBoolean("Rodillos On", isRodillosOn);
     }
 
         public void updateDashboard(){
@@ -203,52 +233,110 @@ public class Intake extends SubsystemBase{
         //motorPosicion.setControl(mmControl.withPosition(motorPosicion.getPosition().getValueAsDouble()));
     }
 
-    public void resetEncoder(){
+    public void resetEncoder_up(){
         motorPosicion.setPosition(0);
     }
 
-    private void resetEncoder_Init(){
-        motorPosicion.setPosition(gradosAMotorRot(448));
+    public void resetEncoder_down(){
+        motorPosicion.setPosition(gradosAMotorRot(80));
     }
     public void activarRodillos(){
         motorRodillo.set(VELOCIDAD_RODILLO);
+        isRodillosOn = true;
     }
 
     public void activarRodillosPivotear(){
         motorRodillo.set(VELOCIDAD_RODILLO_PIVOTEO);
+        isRodillosOn = true;
     }
 
     public void invertirRodillos(){
         motorRodillo.set(-VELOCIDAD_RODILLO);
+        isRodillosOn = true;
     }
 
     public void stopRodillos(){
         motorRodillo.set(0.0);
+        isRodillosOn = false;
     }
 
-    public void autoPivote(){ //PROBARLO SI NO FUNCIONA EN EL AUTNOMO, PROBAR ESTE
-        if(!disableAutoPivote){
+    public boolean setpointAutoPivoteo(){
+        return autonomousPivoteoEnd;
+    }
+
+    public void resetAutoPivoteo(){
+        counterPivoteo = 1;
+        autonomousPivoteoEnd = false;
+        isPivoteDown=true;
+    }
+
+    public void autoPivoteo(int iteracion){
         activarRodillosPivotear();
         if(!isPivoteDown){
             move2Nivel(3);
         }else{
             move2Nivel(1);
         }
+
+        boolean currentAtSetpoint = atSetpoint();
+        if(currentAtSetpoint && !lastAtSetpoint){
+            if(counterPivoteo < iteracion*2){
+                counterPivoteo++;
+                autonomousPivoteoEnd = false;
+            } else {
+                counterPivoteo = 1;
+                stopRodillos();
+                autonomousPivoteoEnd = true;
+            }
+            isPivoteDown = !isPivoteDown;
+        }
+        lastAtSetpoint = currentAtSetpoint;
+    }
+
+    public void activarPivoteo(){
+        activarRodillosPivotear();
+        if(!isPivoteDown){
+            move2Nivel(3); // bajo
+        }else{
+            move2Nivel(1); // medio
+        }
         if(atSetpoint()){
             isPivoteDown=!isPivoteDown;
         }
-        }else{
-            stopMotorPosicion();
-            stopRodillos();
-        }
-    }
-    
-
-    public void setDisableAutoPivote(boolean disable){
-        disableAutoPivote=disable;
     }
 
-    public boolean isDisableAutoPivote(){
-        return disableAutoPivote;
+    public void activarPivoteoLevantado(){
+        activarRodillosPivotear();
+        move2Nivel(1); // medio
     }
+
+    public void simulationInit() {
+        posSim = motorPosicion.getSimState();
+
+        posSim.Orientation = ChassisReference.CounterClockwise_Positive;
+        posSim.setMotorType(TalonFXSimState.MotorType.KrakenX60);
+
+        posMotorSim.setState(0, 0);
+
+        posSim.setRawRotorPosition(0);
+        posSim.setRotorVelocity(0);
+    }
+
+    @Override
+    public void simulationPeriodic() {
+        if (posSim == null) return;
+        double batteryVoltage = edu.wpi.first.wpilibj.RobotController.getBatteryVoltage();
+        posSim.setSupplyVoltage(batteryVoltage);
+        var motorVoltage = posSim.getMotorVoltageMeasure();
+        posMotorSim.setInputVoltage(motorVoltage.in(edu.wpi.first.units.Units.Volts));
+        posMotorSim.update(0.020);
+
+        posSim.setRawRotorPosition(
+            posMotorSim.getAngularPosition().times(REDUCCION)
+        );
+        posSim.setRotorVelocity(
+            posMotorSim.getAngularVelocity().times(REDUCCION)
+        );
+    }
+
 }

@@ -35,22 +35,25 @@ public class AutoAimCommand extends Command {
 
     if(direction == 0 ){ // direccion = 0 --> a apuntar al HUB
       autoAim.setIsTargetHUB(true);
+      autoAim.setIsTargetFeedeo(false);
       autoAim.setIsOnlyRotate(false);
       autoAim.onlyRotateToTarget(direction);
-    }else if(direction == 5){ // direccion = 5 --> a apuntar hacia la nuestra alinza
+    }else if(direction == 5){ // direccion = 5 --> a apuntar para feedeo
       autoAim.setIsTargetHUB(false);
-      autoAim.setIsOnlyRotate(true);
+      autoAim.setIsTargetFeedeo(true);
+      autoAim.setIsOnlyRotate(false);
       autoAim.onlyRotateToTarget(direction);
     }else {
       autoAim.setIsTargetHUB(false);
+      autoAim.setIsTargetFeedeo(false);
       autoAim.setIsOnlyRotate(false);
       autoAim.moveToTarget(direction);
     }
   }
 
   private double deadband(double value) {
-  return Math.abs(value) < 0.05 ? 0 : value;
-}
+    return Math.abs(value) < 0.05 ? 0 : value;
+  }
 
   @Override
   public void end(boolean interrupted) {

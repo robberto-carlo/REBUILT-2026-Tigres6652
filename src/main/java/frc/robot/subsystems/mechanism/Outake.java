@@ -1,17 +1,13 @@
 package frc.robot.subsystems.mechanism;
-
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Seconds;
-
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
-
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
-
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -19,6 +15,8 @@ public class Outake extends SubsystemBase {
   private static final boolean CALIBRAR_AUTO_SHOOT = false; // USAR PARA PODER AGREGAR UN TARGET MANUAL A EL OUTAKE EN EL SHUFFLEBOARD
   // Si van a calibrar PID deL OUTAKE, volver True, y veran en ShuffleBoard en los datos del PID del OUTAKE
   private static final boolean OUTAKE_CHANGE_PID = false; // NO TENER EN TRUE MAS DE UNO PARA SACAR PIDS;
+  private static final boolean IS_CONSTANT_RPM = false;  // Si es True, el outake se mantiene a ciertas RPMs, si es False, se detendra a 0 RPMs
+  private static final double RPM_STOP_OUTAKE = 500; // Si es true, el outake se mantiene a estas RPMs que le pongas en esta variable
 
 
   private final TalonFX master = new TalonFX(13); // motor Izquierda
@@ -32,12 +30,12 @@ public class Outake extends SubsystemBase {
   private static final double RPM_TOLERANCE = 100;
   private static final double STABLE_TIME = 0.10; // segundos 0.10
 
-  private double KS = 0.45; // 0.35 - 0.5
-  private double KV = 0.11; //0.12 - 0.115
+  private double KS = 0.3; // 0.35 - 0.5
+  private double KV = 0.1; //0.12 - 0.115
   private double KA = 0.1; //0.004 - 0.2
 
-  private double KP = 0.75; //0.9 - 0.8
-  private double KI = 0.14; //0.0
+  private double KP = 0.5; //0.9 - 0.8
+  private double KI = 0.5; //0.0
   private double KD = 0.0; //0.0
 
   public Outake() {
@@ -65,7 +63,7 @@ public class Outake extends SubsystemBase {
       .withStatorCurrentLimitEnable(true); // And enable it
     
     cfg.CurrentLimits = m_currentLimits;
-    cfg.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+    cfg.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
     master.getConfigurator().apply(cfg);
     follower.getConfigurator().apply(cfg);
@@ -94,8 +92,12 @@ public class Outake extends SubsystemBase {
     master.setControl(velocityControl.withVelocity(rps));
   }
 
-  public void stop() {
-    master.stopMotor();
+  public void stop(){
+    if(IS_CONSTANT_RPM){
+      setRPM(RPM_STOP_OUTAKE);
+    }else{
+      master.stopMotor();
+    }
   }
 
   public double getRPM() {

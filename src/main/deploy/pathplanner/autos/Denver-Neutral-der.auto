@@ -5,27 +5,9 @@
     "data": {
       "commands": [
         {
-          "type": "named",
-          "data": {
-            "name": "Down-Intake"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Intake-On"
-          }
-        },
-        {
           "type": "path",
           "data": {
             "pathName": "Denver-Neutral-der-1"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Intake-Off"
           }
         },
         {

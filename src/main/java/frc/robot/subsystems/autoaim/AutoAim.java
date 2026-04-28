@@ -1,16 +1,19 @@
 package frc.robot.subsystems.autoaim;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.commands.DriveCommands;
 import frc.robot.subsystems.drive.Drive;
-import java.util.ArrayList;
-import java.util.List;
 
 public class AutoAim extends SubsystemBase {
   private final Drive drive;
@@ -29,7 +32,12 @@ public class AutoAim extends SubsystemBase {
 
   private double gradosToHub = 0;
   private double distanceToHub = 0;
+  private double gradosToFeedeo = 0;
+  private double distanceToFeedeo = 0;
+
+  // AGREGAR FEEDEO
   private boolean isTargetHUB;
+  private boolean isTargetFEEDEO;
   private boolean isOnlyRotate;
 
   private double joyX = 0;
@@ -38,23 +46,23 @@ public class AutoAim extends SubsystemBase {
 
   private PIDController xController, yController, rotController, rotController_HUB;
 
-  private static final double KP = 3.2, KI = 0.0, KD = 0.0; // KP 3.4, 2.6
+  private static final double KP = 3.2, KI = 0.0, KD = 0.0; // KP 3.2
   private static final double KP_ROT = 3.0, KI_ROT = 0.0, KD_ROT = 0.0; // KP 3.0
   private static final double KP_ROT_HUB = 2.8, KI_ROT_HUB = 0.0, KD_ROT_HUB = 0.0; // KP 2.8
 
-  private static double MAX_OUTPUT = 3.4; // 0.7 - 3.4
+  private static double MAX_OUTPUT = 3.4; // 3.4
   private static double MIN_OUTPUT = 0.4; // 0.4
-  private static double MAX_OUTPUT_ROT = Math.toRadians(300); // 0.55 - 360 grad
-  private static double MIN_OUTPUT_ROT = Math.toRadians(45);; // 0.10 - 40grad
+  private static double MAX_OUTPUT_ROT = Math.toRadians(300); // 360 grad
+  private static double MIN_OUTPUT_ROT = Math.toRadians(45);; // 45grad
   private static final double MAX_OUTPUT_ROT_HUB = 0.60; // 0.60
   private static final double MIN_OUTPUT_ROT_HUB = 0.12; // 0.10 - 0.15
 
-  private static final double ERROR_PID = 0.05; // en metros (x,y) --- 0.07
-  private static final double ERROR_DEGREES_PID = 2; // en grados (rotacion) --- 3
-  private static final double ERROR_DEGREES_HUB_PID = 0.6; // en grados (rotacion) --- 1 - 1.5
+  private static final double ERROR_PID = 0.05; // en metros (x,y) --- 0.05
+  private static final double ERROR_DEGREES_PID = 2; // en grados (rotacion) --- 2
+  private static final double ERROR_DEGREES_HUB_PID = 0.6; // en grados (rotacion) --- 1.5, 0.6
 
-  private static double ERROR_X_ADVANCE = 0.07; // en metros (x,y) --- 0.1
-  private static double ERROR_Y_ADVANCE = 0.07; // en metros (x,y) --- 0.1
+  private static double ERROR_X_ADVANCE = 0.07; // en metros (x,y) --- 0.07
+  private static double ERROR_Y_ADVANCE = 0.07; // en metros (x,y) --- 0.07
   private static double ERROR_DEGREES_ADVANCE = 3.0; // en grados (rotacion) --- 3, 3.5
 
   private SlewRateLimiter xAccelLimit = new SlewRateLimiter(3.0); // 3
@@ -331,6 +339,8 @@ public class AutoAim extends SubsystemBase {
     double outputY = yController.calculate(currentPose.getY(), targetPose.getY());
     if(isTargetHUB){
       outputRot = rotController_HUB.calculate(currentPose.getRotation().getRadians(), gradosToHub);
+    }else if(isTargetFEEDEO){
+      outputRot = rotController_HUB.calculate(currentPose.getRotation().getRadians(), gradosToFeedeo);
     }else{
       outputRot = rotController.calculate(currentPose.getRotation().getRadians(),
                                           targetPose.getRotation().getRadians());
@@ -358,7 +368,7 @@ public class AutoAim extends SubsystemBase {
       outputY = limitAccel(accelY, decelY);
     }
     
-    if(isTargetHUB || isOnlyRotate){
+    if(isTargetHUB || isTargetFEEDEO || isOnlyRotate){
       outputRot = rotController_HUB.atSetpoint() ? 0 : limitOutput(outputRot, MIN_OUTPUT_ROT_HUB, MAX_OUTPUT_ROT_HUB);
     }else{
       if(rotController.atSetpoint()){
@@ -446,6 +456,7 @@ public class AutoAim extends SubsystemBase {
       resetFullRoute();
     }
     setDistanceToHub();
+    setGradosToFeedeo();
 
     SmartDashboard.putNumber("PRUEBA_VEL_X", AutoAim_Vel_X);
     SmartDashboard.putNumber("PRUEBA_VEL_Y", AutoAim_Vel_Y);
@@ -463,9 +474,14 @@ public class AutoAim extends SubsystemBase {
     
     SmartDashboard.putBoolean("AutoAim Setpoint", atSetPointFase());
     SmartDashboard.putBoolean("RotHUB Setpoint", autoAimHubFinished());
+
     SmartDashboard.putBoolean("isTargetHUB", isTargetHUB);
     SmartDashboard.putNumber("GradosToHub", Math.toDegrees(gradosToHub));
     SmartDashboard.putNumber("DistanceToHub", distanceToHub);
+    SmartDashboard.putBoolean("isTargetFEEDEO", isTargetFEEDEO); 
+    SmartDashboard.putNumber("GradosToFeedeo",  Math.toDegrees(gradosToFeedeo)); 
+    SmartDashboard.putNumber("DistanceToFeedeo", distanceToFeedeo);
+
     SmartDashboard.putNumber("Max-Vel X-Y AutoAim", MAX_OUTPUT);
     SmartDashboard.putNumber("Max-Vel Rot AutoAim", MAX_OUTPUT_ROT);
 
@@ -544,6 +560,49 @@ public class AutoAim extends SubsystemBase {
 
   public void setIsTargetHUB(boolean activar) {
     isTargetHUB = activar;
+  }
+
+  private void setGradosToFeedeo() {
+    if (targetPose == null) return;
+
+    Pose2d currentPose = drive.getPose();
+    Pose2d feedeo = null;
+
+    if(ids == null || ids.isEmpty()) return;
+
+    for(int zoneId : ids){
+      if(zoneId == 2 || zoneId == 6){ // Zona Derecha alianza Azul / Zona Izquierda alianza Roja
+        if(DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red){
+          feedeo = new Pose2d(14.5, 1.5, new Rotation2d()); // cordenadas de feedeo para la alianza Roja
+        }else{ // Ver si al 1.5 cambiar a 1.0
+          feedeo = new Pose2d(2.0, 1.5, new Rotation2d()); // cordenadas de feedeo para la alianza Azul
+        }
+        break;
+      }else if(zoneId == 3 || zoneId == 5){ // Zona Izquierda alianza Azul / Zona Derecha alianza Roja
+        if(DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red){
+          feedeo = new Pose2d(14.5, 6.5, new Rotation2d()); // cordenadas de feedeo para la alianza Roja
+        }else{ // Ver si al 6.5 cambiar a 7.0
+          feedeo = new Pose2d(2.0, 6.5, new Rotation2d()); // cordenadas de feedeo para la alianza Azul
+        }
+        break; 
+      }
+    }
+
+    if(feedeo == null) return;
+    double dx = feedeo.getX() - currentPose.getX();
+    double dy = feedeo.getY() - currentPose.getY();
+
+    gradosToFeedeo = Math.atan2(dy, dx);
+    distanceToFeedeo = Math.hypot(dx, dy);
+}
+
+  public double getGradosToFeedeo() {
+    if(!isTargetFEEDEO) return -1;
+    return gradosToFeedeo;
+  }
+
+  public void setIsTargetFeedeo(boolean activar) {
+      isTargetFEEDEO = activar;
   }
 
   public void setIsOnlyRotate(boolean activar) {

@@ -1,6 +1,7 @@
 package frc.robot.commands;
 
 import java.util.function.Supplier;
+
 //import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.autoaim.AutoAim;
@@ -16,12 +17,6 @@ public class ShooterCommand extends Command {
     //el boton X mueve la capucha a el angulo que le pongas, y el boton Y se mueve a los RPMs que le pongas en el traget en el SHUFFLEBOARD
     private static final boolean CALIBRAR_AUTO_SHOOT = false; // FALSE SI VAMOS A IR A MATCH
 
-
-    // RT -ya etsa - agreagr funvion 100rpm
-    // A - ya esta - boton de fileo
-    // jsotik izq presionado -. invetir indexer 
-    // ohsotik der -a aciavr indexer 
-
     private final Outake outake;
     private final Hood hood;
     private final Indexer indexer;
@@ -29,15 +24,21 @@ public class ShooterCommand extends Command {
     private final Supplier<Boolean> botonLB;// LB = Bloquar Indexer
     private Supplier<Boolean> povUp_1Driver, povDown_1Driver, resetHood, botonY, botonX, botonA, botonB, botonRB, povUp_2Driver;
     private Supplier<Boolean> botonJostikcDer, botonJostikcIzq;
-
     private Supplier<Double> joystickRightY, gatilloLT, gatilloRT;
 
     private static final double INDEXER_ACTIVATION_THRESHOLD = 0.2; 
     private static final double DEADZONE_HOOD = 0.05; 
+    private static final double JAM_RPM_THRESHOLD = -200; // -200 - Ver cuantos rpms del indexer esta bien cuadnose atorna y no solo caundo trasporta mucho
+    private static final double JAM_TIME_THRESHOLD = 0.3; // seg ver cuanto tiempo que se atore el indexer esta bien
+    private static final double REVERSE_TIME = 0.6; // seg --> Ver cuanto timepo hacia atras
 
     private double targetRPM = -1;
     private double targetAngle = -1;
     private boolean resetOld = false;
+    private double jamTime = 0;
+    private double reverseTime = 0;
+    private boolean isReversing = false;
+
 
     // distancia del Shooter al HUB
     public static final double[] DISTANCE = { // 1.3
@@ -136,6 +137,15 @@ public class ShooterCommand extends Command {
             return;
         }
 
+        double rpm = indexer.getMainRPM();
+        if(indexer.onMotorMain() && !isReversing){
+            if(rpm > JAM_RPM_THRESHOLD){ // Esta asi porque el MainIndexer esta invertido y llega a -3000 RPMs
+                jamTime += 0.02;
+            }else{
+                jamTime = 0;
+            }
+        }
+
         boolean Shoot = true;
         if(botonB.get()){ // Disparo Automatico 
             if(CALIBRAR_AUTO_SHOOT){
@@ -151,19 +161,16 @@ public class ShooterCommand extends Command {
                 if(gatilloRT.get() >= INDEXER_ACTIVATION_THRESHOLD){
                     targetRPM += 100; // Aumentar RPM para disparo
                 }
-                if(botonY.get()){
-                    targetRPM += 200; // Aumentar RPM para disparo
-                }
 
                 outake.setRPM(targetRPM);
                 hood.setAngle(targetAngle);
                 activateIndexer();
             }
-        }else if(botonA.get()){ // Disparar a nuestra Alianza
+        }else if(botonA.get()){ // Disparar a nuestra Alianza Corto
             if(CALIBRAR_AUTO_SHOOT){
                 outake.setRPM(targetRPM);
             }else{
-                hood.setAngle(25);
+                hood.setAngle(23);
                 outake.setRPM(3400);
                 activateIndexer();
             }
@@ -171,43 +178,47 @@ public class ShooterCommand extends Command {
             if(CALIBRAR_AUTO_SHOOT){
                 hood.setAngle(targetAngle);
             }else{
-                hood.setAngle(9); // 8,9,11
+                hood.setAngle(9);
                 outake.setRPM(2700);
                 activateIndexer();   
             }
-        }else if(povUp_2Driver.get()){  // Disparo Lejano 
+        }else if(botonY.get()){ // Disparar a nuestra Alianza Lejos
+            hood.setAngle(9); 
+            outake.setRPM(2700);
+            activateIndexer();   
+        }else if(povUp_2Driver.get()){  // Disparo Lejano
             hood.setAngle(15); 
             outake.setRPM(2900);
             activateIndexer();            
         }else{
             Shoot = false;
             outake.stop();
-            if(!CALIBRAR_AUTO_SHOOT) hood.saveZone();
+            if(!CALIBRAR_AUTO_SHOOT) hood.saveZone(); // Bajar capucha automaticamente
         }
 
-        if(botonLB.get()){
+        if(botonLB.get()){ // Bloquear indexer
             indexer.desactivarMain();
             indexer.desactivarBandas();
-        }else if(botonJostikcDer.get()){
+        }else if(botonJostikcDer.get()){ // Activar indexer
             indexer.activarMain();
             indexer.activarBandas();
-        }else if(gatilloLT.get()>=INDEXER_ACTIVATION_THRESHOLD && !Shoot){
-            indexer.invertirBandas();
-        }else if(botonJostikcIzq.get()){
+        }else if(gatilloLT.get()>=INDEXER_ACTIVATION_THRESHOLD && !Shoot){ // Invertir indexer con intake
+            indexer.invertirBandasIntake();
+        }else if(botonJostikcIzq.get()){ // Invertir indexer
             indexer.invertirMain();
             indexer.invertirBandas();
-        }else if(!Shoot){
+        }else if(!Shoot){ // Desactivar indexer
             indexer.desactivarMain();
             indexer.desactivarBandas();
         }
 
-        if(botonRB.get()){
+        if(botonRB.get()){ // Activar modo Manual de Capucha
             double joystick = deadband(joystickRightY.get(), DEADZONE_HOOD);
             hood.movimientoFree(-joystick*MAX_OUTPUT_HOOD);
         }
         
         boolean reset = resetHood.get();
-        if (reset && !resetOld) {
+        if (reset && !resetOld) { //  Resetear Capucha a 0 grados
             hood.setAngle(0);
             hood.resetEncoder();
         }
@@ -268,12 +279,32 @@ public class ShooterCommand extends Command {
     }
 
     private void activateIndexer() {
-        if(hood.atSetpoint() && outake.atSetpoint()){
-            indexer.activarMain();
-            indexer.activarBandas();
-        }else{
+        if(!(hood.atSetpoint() && outake.atSetpoint())){
             indexer.desactivarMain();
             indexer.desactivarBandas();
+            return;
         }
+
+        if(isReversing){
+            indexer.invertirMain();
+            //indexer.activarBandas(); 
+            indexer.invertirBandas();
+            reverseTime += 0.02;
+            if(reverseTime >= REVERSE_TIME){
+                isReversing = false;
+                reverseTime = 0;
+                jamTime = 0;
+            }
+            return;
+        }
+
+        if(jamTime >= JAM_TIME_THRESHOLD){
+            isReversing = true;
+            reverseTime = 0;
+            return;
+        }
+
+    indexer.activarMain();
+    indexer.activarBandas();
     }
 }

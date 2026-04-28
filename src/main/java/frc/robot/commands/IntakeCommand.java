@@ -22,12 +22,10 @@ public class IntakeCommand extends Command {
   private final Supplier<Double> gatilloLT; // activarRodillos /LT
 
   private boolean resetOld = false;
-  private boolean isPivoteDown = false;
+  private boolean pivoteOn = false;
 
   private static final int POSICION_ARRIBA = 0;
-  private static final int POSICION_MEDIO = 1;
   private static final int POSICION_BAJA = 2;
-  private static final int POSICION_BAJA_AUTO = 3;
 
   private static final double RODILLOS_ACTIVATION_THRESHOLD = 0.2; 
   private static final double DEADZONE_INTAKE = 0.05; 
@@ -54,14 +52,15 @@ public class IntakeCommand extends Command {
 
   @Override
   public void execute() {
+    pivoteOn=false;
     if (povRight.get()) {
       intake.move2Nivel(POSICION_ARRIBA);
     }else if (povLeft.get()) {
       intake.move2Nivel(POSICION_BAJA);
     }else if(povDown.get()){
-      intake.activarRodillosPivotear();
-      changeTargetPivote();
-      return;
+      intake.activarPivoteo();
+      //intake.activarPivoteoLevantado();
+      pivoteOn=true;
     }else {
       intake.stopMotorPosicion();
     }  
@@ -74,14 +73,14 @@ public class IntakeCommand extends Command {
     boolean reset = botonReset.get();
     if (reset && !resetOld) {
       if(INTAKE_CHANGE_PID) intake.configurarMotor();
-      intake.resetEncoder();
+      intake.resetEncoder_down();
       intake.setAngle(0);
     }
     resetOld = reset;
 
     if (gatilloLT.get() > RODILLOS_ACTIVATION_THRESHOLD) {
       intake.activarRodillos();; 
-    }else{
+    }else if(!pivoteOn){
       intake.stopRodillos();
     }
 
@@ -94,19 +93,6 @@ public class IntakeCommand extends Command {
     return value;
   }
 
-  private void changeTargetPivote(){ //SI NO FUNCIONA ESTE EN AUTONOMOS, PROBAR EL METODO PERO DEL SUBSISTEMA DEL INTAKE QUE SE LLAMA IGUAL
-    if(!isPivoteDown){
-      intake.move2Nivel(POSICION_BAJA_AUTO);
-    }else{
-      intake.move2Nivel(POSICION_MEDIO);
-    }
-
-    if(intake.atSetpoint()){
-      isPivoteDown=!isPivoteDown;
-    }
-  }
-
-
   @Override
   public boolean isFinished() {
     return false;
@@ -116,6 +102,5 @@ public class IntakeCommand extends Command {
   public void end(boolean interrupted) {
     intake.stopMotorPosicion();
     intake.stopRodillos();
-    isPivoteDown = false;
   }
 }

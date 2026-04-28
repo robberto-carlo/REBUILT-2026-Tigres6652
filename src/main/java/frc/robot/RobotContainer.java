@@ -2,6 +2,8 @@ package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.events.EventTrigger;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -131,12 +133,10 @@ public class RobotContainer {
 
     NamedCommands.registerCommand(
         "Pivote-On",
-        new RunCommand(() -> intake.autoPivote(), intake)
-          .withTimeout(4));
-
-    NamedCommands.registerCommand(
-        "Pivote-Off",
-        new InstantCommand(() -> intake.stopRodillos(), intake));
+        Commands.sequence(
+            Commands.runOnce(() -> intake.resetAutoPivoteo()),
+            new RunCommand(() -> intake.autoPivoteo(2), intake)
+                .until(() -> intake.setpointAutoPivoteo())));
 
     NamedCommands.registerCommand(
         "Intake-On",
@@ -159,19 +159,30 @@ public class RobotContainer {
             .withTimeout(3));
 
     NamedCommands.registerCommand(
-        "Down-Intake-Auto",
-        new RunCommand(() -> intake.move2Nivel(3), intake) 
-            .until(() -> intake.atSetpoint())
-            .withTimeout(4));
-
-    NamedCommands.registerCommand(
         "AutoAim_Hub",
         new AutoAimCommand(
             autoAim,
             0,
             () -> 0.0,() -> 0.0,() -> 0.0)
             .until(() -> autoAim.autoAimHubFinished())
-            .withTimeout(2)); //2s
+            .withTimeout(1)); //2s
+
+    new EventTrigger("Event-Down-Intake").onTrue(
+        new RunCommand(() -> intake.move2Nivel(3))
+            .until(() -> intake.atSetpoint())
+            .withTimeout(3));
+
+    new EventTrigger("Event-Intake-On").onTrue(
+        Commands.runOnce(() -> intake.activarRodillos()));
+
+    new EventTrigger("Event-Intake-Off").onTrue(
+        Commands.runOnce(() -> intake.stopRodillos()));
+
+    // PROBAR ESTE EVENTO, CON VARIAS FUELS
+    new EventTrigger("Event-IntakeConstDown")
+    .whileTrue(
+        Commands.run(() -> intake.move2Nivel(3))
+    );
 
     /// Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());

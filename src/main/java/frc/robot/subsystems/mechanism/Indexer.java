@@ -1,5 +1,6 @@
 package frc.robot.subsystems.mechanism;
 
+import com.revrobotics.RelativeEncoder;
 /*import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
@@ -16,16 +17,20 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Indexer extends SubsystemBase {
     private static final boolean INVERTIR_INDEXER_MAIN = true;
-    private static final boolean INVERTIR_INDEXER_BANDAS = true;
+    private static final boolean INVERTIR_INDEXER_BANDAS = false;
 
-    private static final double VELOCIDAD_INDEXER_MAIN = 0.35; // 0.45
-    private static final double VELOCIDAD_INDEXER_MAIN_INVERTIDA = 0.20; //0.20
-    private static final double VELOCIDAD_INDEXER_BANDA = 0.35; // 0.35 
-    private static final double VELOCIDAD_INDEXER_BANDA_INVERTIDA = 0.35; // 0.35
+    private static final double VELOCIDAD_INDEXER_MAIN = 0.45; // 0.45
+    private static final double VELOCIDAD_INDEXER_MAIN_INVERTIDA = 0.45; //0.20
+    private static final double VELOCIDAD_INDEXER_BANDA = 0.45; // 0.35 
+    private static final double VELOCIDAD_INDEXER_BANDA_INVERTIDA = 0.8; // 0.4
+    private static final double VELOCIDAD_INDEXER_BANDA_INVERTIDA_INTAKE = 0.35; // 0.4
 
 
     private final SparkFlex indexerMotorMain = new SparkFlex(17, MotorType.kBrushless);
     private final SparkFlex indexerMotorBanda = new SparkFlex(15, MotorType.kBrushless);
+    private final RelativeEncoder encoderMain = indexerMotorMain.getEncoder();
+    private final RelativeEncoder encoderBanda = indexerMotorBanda.getEncoder();
+
     private boolean activoMain = false;
     private boolean activoBanda = false;
 
@@ -46,6 +51,10 @@ public class Indexer extends SubsystemBase {
         activoMain = false;
     }
 
+    public double getMainRPM(){
+        return encoderMain.getVelocity();
+    }
+
     public boolean onMotorMain() {
         return activoMain;
     }
@@ -61,9 +70,18 @@ public class Indexer extends SubsystemBase {
         activoBanda = true;
     }
 
+    public void invertirBandasIntake() {
+        indexerMotorBanda.set(-VELOCIDAD_INDEXER_BANDA_INVERTIDA_INTAKE * orientationBandas());
+        activoBanda = true;
+    }
+
     public void desactivarBandas() {
         indexerMotorBanda.set(0.0);
         activoBanda = false;
+    }
+
+    public double getBandaRPM(){
+        return encoderBanda.getVelocity();
     }
 
     public boolean onMotorBanda() {
@@ -74,6 +92,8 @@ public class Indexer extends SubsystemBase {
     public void periodic() {
         SmartDashboard.putBoolean("Indexer Main Activo", activoMain);
         SmartDashboard.putBoolean("Indexer Banda Activo", activoBanda);
+        SmartDashboard.putNumber("RPM Main", encoderMain.getVelocity());
+        SmartDashboard.putNumber("RPM Banda", encoderBanda.getVelocity());
     }
 
     public int orientationMain() {
