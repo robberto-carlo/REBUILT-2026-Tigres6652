@@ -1,7 +1,7 @@
 # Monterrey-2026-Tigres6652
 
 <p align="center">
-  <img src="Imagenes/Monterrey-2026.jpeg" alt="Robot Tigres 6652" width="700">
+  <img src="Imagenes/Monterrey-2026.jpeg" alt="Robot Tigres 6652" width="500">
 </p>
 
 <p align="center">
